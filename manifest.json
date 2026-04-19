@@ -1,0 +1,17 @@
+{
+  "name": "VIVARKA",
+  "short_name": "VIVARKA",
+  "description": "La trajectoire de ta vie",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F2EC",
+  "theme_color": "#3D6B5E",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Ccircle cx='96' cy='96' r='88' fill='none' stroke='%23C8A96E' stroke-width='4'/%3E%3Cpath d='M42 64a72 72 0 0 1 108-12' fill='none' stroke='%235A9688' stroke-width='6' stroke-linecap='round'/%3E%3Ctext x='96' y='118' text-anchor='middle' font-family='serif' font-size='64' font-weight='900' fill='%23C8A96E'%3EVK%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

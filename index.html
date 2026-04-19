@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="VIVARKA">
+  <meta name="theme-color" content="#3D6B5E">
+  <meta name="description" content="VIVARKA, la trajectoire de ta vie. Nutrition, sommeil, activité et coach IA dans une seule PWA.">
+  <link rel="manifest" href="/manifest.json">
+  <title>VIVARKA</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600;9..144,900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+    :root {
+      --sage: #3D6B5E;
+      --sage2: #5A9688;
+      --gold: #A8873A;
+      --gold2: #C8A96E;
+      --blush: #B86A60;
+      --ink: #141E1C;
+      --paper: #F5F2EC;
+      --card: #FFFFFF;
+      --mist: #7A8C86;
+      --border: rgba(61,107,94,0.12);
+      --shadow: 0 2px 16px rgba(20,30,28,0.06);
+      --dark: #0D1512;
+      --dark-card: rgba(255,255,255,0.05);
+      --dark-border: rgba(255,255,255,0.09);
+      --radius: 24px;
+      --radius-sm: 16px;
+      --nav-h: 78px;
+      --header-h: 74px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+
+    .screen {
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    .hidden { display: none !important; }
+
+    .app-mark {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1.5px solid var(--gold2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-weight: 900;
+      font-size: 10px;
+      color: var(--gold2);
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .app-mark::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 1.5px solid transparent;
+      border-top-color: var(--sage2);
+      border-right-color: var(--sage2);
+      transform: rotate(-30deg);
+    }
+
+    .mark-64 { width: 64px; height: 64px; font-size: 24px; }
+    .mark-70 { width: 70px; height: 70px; font-size: 26px; }
+
+    .mark-spin::after { animation: spin 1.4s linear infinite; }
+
+    @keyframes spin {
+      from { transform: rotate(-30deg); }
+      to { transform: rotate(330deg); }
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes dots {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.25; }
+      40% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    .loader-screen,
+    .dark-shell {
+      background:
+        radial-gradient(circle at top right, rgba(90,150,136,0.18), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(168,135,58,0.14), transparent 24%),
+        linear-gradient(180deg, #0D1512 0%, #101916 100%);
+      color: #F5F2EC;
+    }
+
+    .loader-screen {
+      display: grid;
+      place-items: center;
+    }
+
+    .loader-box {
+      text-align: center;
+      animation: rise 0.45s ease;
+    }
+
+    .loader-box h1,
+    .brand-title,
+    .hero-score,
+    .score-number,
+    .card-title,
+    .section-title,
+    .onb-question,
+    .auth-title {
+      font-family: 'Fraunces', serif;
+    }
+
+    .loader-box h1 {
+      margin: 18px 0 8px;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+    }
+
+    .loader-box p {
+      margin: 0;
+      color: var(--sage2);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+    }
+
+    .dark-wrap {
+      min-height: 100vh;
+      padding: 26px 18px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 20px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .brand-title {
+      font-size: 28px;
+      font-weight: 900;
+      margin: 0;
+    }
+
+    .brand-sub {
+      margin: 0;
+      color: rgba(245,242,236,0.68);
+      font-size: 13px;
+      letter-spacing: 0.04em;
+    }
+
+    .auth-card,
+    .onb-card {
+      background: var(--dark-card);
+      border: 1px solid var(--dark-border);
+      border-radius: 28px;
+      padding: 22px 18px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.2);
+      backdrop-filter: blur(18px);
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .tab-pill {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.08);
+      color: rgba(245,242,236,0.84);
+      font-weight: 600;
+    }
+
+    .tab-pill.active {
+      background: linear-gradient(135deg, var(--sage) 0%, var(--sage2) 100%);
+      color: #fff;
+    }
+
+    .auth-title,
+    .onb-question {
+      margin: 0 0 8px;
+      font-size: 24px;
+      line-height: 1.16;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .auth-copy,
+    .onb-copy {
+      margin: 0 0 18px;
+      color: rgba(245,242,236,0.74);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .field,
+    .choice-btn,
+    .text-area {
+      width: 100%;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: #fff;
+      padding: 14px 15px;
+      outline: none;
+    }
+
+    .field::placeholder,
+    .text-area::placeholder { color: rgba(245,242,236,0.38); }
+    .field:focus,
+    .text-area:focus { border-color: rgba(200,169,110,0.65); }
+
+    .field-row { display: grid; gap: 12px; margin-bottom: 14px; }
+
+    .primary-btn,
+    .cta-coach,
+    .send-btn {
+      border: 0;
+      color: #fff;
+      background: linear-gradient(135deg, var(--sage) 0%, var(--sage2) 100%);
+      box-shadow: 0 14px 30px rgba(61,107,94,0.25);
+    }
+
+    .primary-btn {
+      width: 100%;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .secondary-note {
+      margin-top: 14px;
+      font-size: 12px;
+      color: rgba(245,242,236,0.52);
+      text-align: center;
+    }
+
+    .error-box,
+    .success-box,
+    .info-box {
+      margin-bottom: 14px;
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .error-box { background: rgba(184,106,96,0.14); color: #ffccc4; border: 1px solid rgba(184,106,96,0.18); }
+    .success-box { background: rgba(90,150,136,0.14); color: #d1f0e8; border: 1px solid rgba(90,150,136,0.18); }
+    .info-box { background: rgba(200,169,110,0.12); color: #f1dfb2; border: 1px solid rgba(200,169,110,0.18); }
+
+    .dots {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 18px;
+      justify-content: center;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+    }
+
+    .dot.done { background: var(--sage2); }
+    .dot.current { background: var(--gold2); transform: scale(1.18); }
+
+    .choice-list { display: grid; gap: 10px; }
+
+    .choice-btn {
+      text-align: left;
+      font-weight: 500;
+      transition: 0.18s ease;
+    }
+
+    .choice-btn.active,
+    .choice-btn:hover {
+      border-color: rgba(200,169,110,0.44);
+      background: rgba(200,169,110,0.12);
+    }
+
+    .onb-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .ghost-btn {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: transparent;
+      color: rgba(245,242,236,0.82);
+      border-radius: 16px;
+      padding: 13px 14px;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, rgba(90,150,136,0.1), transparent 22%),
+        linear-gradient(180deg, #F7F4EF 0%, var(--paper) 56%);
+      color: var(--ink);
+    }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px;
+      background: rgba(245,242,236,0.9);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-inline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-inline strong {
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+    }
+
+    .user-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--mist);
+    }
+
+    .layout {
+      display: block;
+    }
+
+    .content {
+      padding: 18px 16px calc(var(--nav-h) + 26px);
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .hero-card {
+      display: grid;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--mist);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .hero-score {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--mist);
+      margin-bottom: 6px;
+    }
+
+    .score-row {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .score-wrap { position: relative; width: 90px; height: 90px; }
+
+    .score-ring {
+      width: 90px;
+      height: 90px;
+      transform: rotate(-90deg);
+    }
+
+    .score-center {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .score-number {
+      font-size: 25px;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--ink);
+    }
+
+    .score-label {
+      font-size: 11px;
+      color: var(--mist);
+      margin-top: 3px;
+    }
+
+    .quality-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(61,107,94,0.08);
+      color: var(--sage);
+    }
+
+    .inline-stats,
+    .stats-grid,
+    .profile-stats,
+    .quick-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .inline-stats {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mini-stat,
+    .stat-box {
+      padding: 14px;
+      border-radius: 18px;
+      background: #FBF9F5;
+      border: 1px solid var(--border);
+    }
+
+    .mini-stat strong,
+    .stat-box strong,
+    .metric strong {
+      display: block;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .mini-stat span,
+    .stat-box span,
+    .metric span {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-size: 12px;
+    }
+
+    .progress-block { display: grid; gap: 10px; }
+
+    .progress-line {
+      width: 100%;
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(61,107,94,0.08);
+      overflow: hidden;
+    }
+
+    .progress-line b {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--gold2) 0%, var(--sage2) 100%);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 18px 0 12px;
+    }
+
+    .section-title,
+    .card-title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.1;
+    }
+
+    .section-sub,
+    .muted {
+      color: var(--mist);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-bottom: 16px;
+    }
+
+    .alert-list,
+    .meal-list,
+    .day-list,
+    .profile-list,
+    .suggest-list,
+    .chat-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .alert-item.warn { background: rgba(200,169,110,0.08); }
+    .alert-item.ok { background: rgba(90,150,136,0.08); }
+    .alert-item.crit { background: rgba(184,106,96,0.1); }
+
+    .meal-item,
+    .day-card,
+    .profile-line,
+    .metric,
+    .chat-bubble,
+    .sleep-card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: #fff;
+    }
+
+    .meal-item,
+    .profile-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+    }
+
+    .meal-main strong,
+    .profile-line strong,
+    .chat-top strong,
+    .day-head strong {
+      display: block;
+      font-weight: 600;
+    }
+
+    .meal-main span,
+    .profile-line span,
+    .day-head span {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-size: 12px;
+    }
+
+    .score-chip {
+      min-width: 62px;
+      text-align: center;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 28px 18px;
+      border: 1px dashed rgba(61,107,94,0.22);
+      border-radius: 22px;
+      color: var(--mist);
+      background: rgba(255,255,255,0.56);
+    }
+
+    .empty-state strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 6px;
+      font-size: 16px;
+    }
+
+    .cta-coach {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      border-radius: 24px;
+      padding: 18px;
+      margin-top: 16px;
+    }
+
+    .cta-coach span {
+      display: block;
+      text-align: left;
+    }
+
+    .cta-coach b {
+      display: block;
+      font-size: 17px;
+      margin-bottom: 4px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 22;
+      height: var(--nav-h);
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(245,242,236,0.96);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .nav-btn {
+      border: 0;
+      background: transparent;
+      border-radius: 18px;
+      color: var(--mist);
+      padding: 8px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .nav-btn.active {
+      background: rgba(61,107,94,0.1);
+      color: var(--sage);
+    }
+
+    .sidebar { display: none; }
+
+    .day-card,
+    .sleep-card {
+      padding: 16px;
+    }
+
+    .day-head,
+    .chat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .sleep-bars {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .sleep-bar {
+      display: grid;
+      grid-template-columns: 72px 1fr 52px;
+      gap: 12px;
+      align-items: center;
+      font-size: 12px;
+      color: var(--mist);
+    }
+
+    .sleep-track {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(61,107,94,0.08);
+      overflow: hidden;
+    }
+
+    .sleep-track b {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .profile-list { margin-bottom: 16px; }
+
+    .profile-line button,
+    .reset-btn,
+    .mini-btn {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 12px;
+      font-weight: 600;
+    }
+
+    .reset-btn {
+      width: 100%;
+      background: rgba(184,106,96,0.1);
+      border-color: rgba(184,106,96,0.2);
+      color: #8f3c32;
+      margin-top: 14px;
+    }
+
+    .chat-screen {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      min-height: calc(100vh - var(--header-h) - var(--nav-h) - 14px);
+      gap: 12px;
+    }
+
+    .chat-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 24px;
+      background: #fff;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .back-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .suggest-strip {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .suggest-strip::-webkit-scrollbar { display: none; }
+
+    .mini-btn {
+      white-space: nowrap;
+      background: #fffaf2;
+      border-color: rgba(168,135,58,0.16);
+      color: var(--gold);
+    }
+
+    .chat-panel {
+      min-height: 280px;
+      padding: 14px;
+      background: rgba(255,255,255,0.74);
+      border-radius: 26px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-list {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 4px;
+      min-height: 0;
+    }
+
+    .chat-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .chat-row.user { justify-content: flex-end; }
+
+    .chat-bubble {
+      max-width: min(82%, 520px);
+      padding: 14px;
+      line-height: 1.55;
+      font-size: 14px;
+      box-shadow: 0 10px 18px rgba(20,30,28,0.04);
+    }
+
+    .chat-row.user .chat-bubble {
+      border: 0;
+      color: #fff;
+      background: linear-gradient(135deg, var(--sage) 0%, var(--sage2) 100%);
+    }
+
+    .chat-row.bot .chat-bubble {
+      background: #fff;
+      border-color: rgba(61,107,94,0.18);
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(61,107,94,0.1);
+      color: var(--sage);
+      flex: 0 0 auto;
+    }
+
+    .typing {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      height: 16px;
+    }
+
+    .typing i {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--sage2);
+      animation: dots 1.1s infinite ease-in-out;
+    }
+
+    .typing i:nth-child(2) { animation-delay: 0.15s; }
+    .typing i:nth-child(3) { animation-delay: 0.3s; }
+
+    .composer {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      padding: 12px;
+      border-radius: 24px;
+      background: #fff;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .text-area {
+      min-height: 48px;
+      max-height: 90px;
+      resize: none;
+      color: var(--ink);
+      background: transparent;
+      border: 0;
+      padding: 10px 0 0;
+    }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      font-size: 20px;
+    }
+
+    .install-banner {
+      margin: 0 0 12px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(168,135,58,0.08);
+      border: 1px solid rgba(168,135,58,0.12);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .install-banner button {
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: var(--gold);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    @media (min-width: 769px) {
+      :root { --nav-h: 0px; }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 228px minmax(0, 1fr);
+        max-width: 1320px;
+        margin: 0 auto;
+      }
+
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 22px 16px 24px 18px;
+        position: sticky;
+        top: var(--header-h);
+        height: calc(100vh - var(--header-h));
+      }
+
+      .side-card {
+        background: rgba(255,255,255,0.78);
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .side-nav {
+        display: grid;
+        gap: 10px;
+      }
+
+      .side-btn {
+        border: 0;
+        text-align: left;
+        border-radius: 18px;
+        padding: 14px;
+        background: transparent;
+        color: var(--mist);
+        font-weight: 600;
+      }
+
+      .side-btn.active {
+        background: rgba(61,107,94,0.1);
+        color: var(--sage);
+      }
+
+      .content {
+        padding: 20px 20px 28px;
+        max-width: none;
+      }
+
+      .bottom-nav { display: none; }
+      .hero-card { grid-template-columns: 1.2fr 0.9fr; }
+      .inline-stats { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 480px) {
+      .inline-stats,
+      .stats-grid,
+      .quick-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-top,
+      .score-row,
+      .meal-item,
+      .profile-line,
+      .day-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .chat-bubble { max-width: 90%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loader" class="screen loader-screen">
+    <div class="loader-box">
+      <div class="app-mark mark-70 mark-spin">VK</div>
+      <h1>VIVARKA</h1>
+      <p>Chargement...</p>
+    </div>
+  </div>
+
+  <div id="auth" class="screen dark-shell hidden">
+    <div class="dark-wrap">
+      <div class="brand">
+        <div class="app-mark mark-64">VK</div>
+        <h1 class="brand-title">VIVARKA</h1>
+        <p class="brand-sub">La trajectoire de ta vie</p>
+      </div>
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="tab-pill active" data-auth-tab="login">Connexion</button>
+          <button class="tab-pill" data-auth-tab="signup">Inscription</button>
+        </div>
+        <div id="authFeedback"></div>
+        <h2 id="authTitle" class="auth-title">Connecte-toi</h2>
+        <p id="authCopy" class="auth-copy">Ton espace VIVARKA est personnel. Tu retrouves uniquement tes propres repas, nuits, séances et conversations.</p>
+        <div class="field-row">
+          <input id="authEmail" class="field" type="email" autocomplete="email" placeholder="Email">
+          <input id="authPassword" class="field" type="password" autocomplete="current-password" placeholder="Mot de passe">
+        </div>
+        <button id="authSubmit" class="primary-btn">Continuer →</button>
+        <div class="secondary-note">Version de test statique pour GitHub + Vercel + Supabase.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="onboarding" class="screen dark-shell hidden">
+    <div class="dark-wrap">
+      <div class="brand">
+        <div class="app-mark mark-64">VK</div>
+        <h1 class="brand-title">VIVARKA</h1>
+        <p class="brand-sub">La trajectoire de ta vie</p>
+      </div>
+      <div class="onb-card">
+        <div id="onbFeedback"></div>
+        <div id="onbDots" class="dots"></div>
+        <h2 id="onbQuestion" class="onb-question"></h2>
+        <p id="onbCopy" class="onb-copy"></p>
+        <div id="onbInput"></div>
+        <div class="onb-footer">
+          <button id="onbBack" class="ghost-btn">Retour</button>
+          <button id="onbNext" class="primary-btn" style="margin-top:0; width:auto; min-width:160px;">Continuer →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" class="screen app-shell hidden"></div>
+
+  <script>
+    var SB_URL = 'https://maumgnzcqhoiutdotrlx.supabase.co';
+    var SB_KEY = 'sb_publishable_Gp7-UNnCA0lK9S1Pl_fz9w_sLl_JKEz';
+
+    var session = null;
+    var profile = null;
+    var meals = [];
+    var sleeps = [];
+    var activities = [];
+    var conversations = [];
+    var authMode = 'login';
+    var currentTab = 'home';
+    var sending = false;
+    var deferredPrompt = null;
+    var onbStep = 0;
+    var onbValues = {
+      prenom: '',
+      age: '',
+      poids: '',
+      obj_poids: '',
+      objectifs: '',
+      sport: '',
+      ton: 'Bienveillant'
+    };
+
+    var ONBOARDING = [
+      { key: 'prenom', label: "Comment tu t'appelles ?", copy: "Le prénom sert à personnaliser le coach et ton tableau de bord.", type: 'text', placeholder: 'Ex: Alex' },
+      { key: 'age', label: 'Quel âge as-tu ?', copy: "Un repère utile pour ajuster les recommandations générales.", type: 'number', placeholder: 'Ex: 30' },
+      { key: 'poids', label: 'Ton poids actuel ?', copy: "En kilos, avec virgule ou point si besoin.", type: 'number', placeholder: 'Ex: 78.6' },
+      { key: 'obj_poids', label: 'Ton objectif de poids ?', copy: "En kilos. Tu peux le modifier plus tard dans ton profil.", type: 'number', placeholder: 'Ex: 75' },
+      { key: 'objectifs', label: 'Quels sont tes objectifs ?', copy: "Choisis l'orientation principale de ton suivi.", type: 'choice', options: ['💪 Muscle & Performance', '⚖️ Perte de poids', '🌿 Longévité & Santé', '🔥 Tout à la fois'] },
+      { key: 'sport', label: 'Tu pratiques quel sport ?', copy: "Le coach l'utilise pour contextualiser nutrition et récupération.", type: 'choice', options: ['🏋️ Musculation', '🏃 Cardio', '🏊 Natation', '🚴 Vélo', '⚽ Sport collectif', '❌ Pas de sport'] },
+      { key: 'ton', label: 'Quel ton pour ton coach ?', copy: "Le style de réponse restera modifiable plus tard.", type: 'choice', options: ['😊 Bienveillant & motivant', '⚡ Direct & sans fioritures', '🔬 Scientifique & précis'] }
+    ];
+
+    window.onload = function() {
+      bindStaticEvents();
+      setTimeout(boot, 1400);
+    };
+
+    function bindStaticEvents() {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-auth-tab]'), function(btn) {
+        btn.onclick = function() {
+          authMode = btn.getAttribute('data-auth-tab');
+          renderAuth();
+        };
+      });
+      document.getElementById('authSubmit').onclick = submitAuth;
+      document.getElementById('authPassword').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') submitAuth();
+      });
+      document.getElementById('onbNext').onclick = nextOnboarding;
+      document.getElementById('onbBack').onclick = prevOnboarding;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        renderApp();
+      });
+    }
+
+    async function boot() {
+      hideAll();
+      show('loader');
+      try {
+        session = readSession();
+        if (session && isExpired(session)) {
+          session = await refreshSession(session.refresh_token);
+          persistSession(session);
+        }
+        if (session && session.access_token) {
+          var me = await Promise.race([
+            loadProfile(),
+            new Promise(function(_, rej) { setTimeout(function() { rej(new Error('timeout')); }, 4000); })
+          ]);
+          if (me && me.onboarding_done) {
+            profile = me;
+            await loadAllData();
+            currentTab = 'home';
+            showApp();
+            return;
+          }
+          if (session) {
+            showOnboarding();
+            return;
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      showAuth();
+    }
+
+    function hideAll() {
+      ['loader', 'auth', 'onboarding', 'app'].forEach(function(id) {
+        document.getElementById(id).classList.add('hidden');
+      });
+    }
+
+    function show(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function showAuth(msg, kind) {
+      hideAll();
+      renderAuth(msg, kind);
+      show('auth');
+    }
+
+    function renderAuth(msg, kind) {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-auth-tab]'), function(btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-auth-tab') === authMode);
+      });
+      document.getElementById('authTitle').textContent = authMode === 'login' ? 'Connecte-toi' : 'Crée ton compte';
+      document.getElementById('authCopy').textContent = authMode === 'login'
+        ? 'Ton espace VIVARKA est personnel. Tu retrouves uniquement tes propres repas, nuits, séances et conversations.'
+        : 'Crée ton accès personnel pour synchroniser ton profil et tes données santé sur tous tes appareils.';
+      document.getElementById('authPassword').setAttribute('autocomplete', authMode === 'login' ? 'current-password' : 'new-password');
+      document.getElementById('authSubmit').textContent = authMode === 'login' ? 'Continuer →' : 'Créer mon compte →';
+      document.getElementById('authFeedback').innerHTML = msg ? '<div class="' + (kind || 'info-box') + '">' + esc(msg) + '</div>' : '';
+    }
+
+    async function submitAuth() {
+      var email = document.getElementById('authEmail').value.trim().toLowerCase();
+      var password = document.getElementById('authPassword').value;
+      if (!email || !password) {
+        return renderAuth('Entre ton email et ton mot de passe.', 'error-box');
+      }
+      if (password.length < 6) {
+        return renderAuth('Le mot de passe doit contenir au moins 6 caractères.', 'error-box');
+      }
+      document.getElementById('authSubmit').disabled = true;
+      try {
+        if (authMode === 'signup') {
+          await signUp(email, password);
+          session = await signIn(email, password);
+        } else {
+          session = await signIn(email, password);
+        }
+        persistSession(session);
+        profile = await loadProfile();
+        if (profile && profile.onboarding_done) {
+          await loadAllData();
+          currentTab = 'home';
+          showApp();
+        } else {
+          onbStep = 0;
+          showOnboarding();
+        }
+      } catch (e) {
+        console.error(e);
+        renderAuth(cleanError(e), 'error-box');
+      } finally {
+        document.getElementById('authSubmit').disabled = false;
+      }
+    }
+
+    function showOnboarding(msg, kind) {
+      hideAll();
+      show('onboarding');
+      renderOnboarding(msg, kind);
+    }
+
+    function renderOnboarding(msg, kind) {
+      var q = ONBOARDING[onbStep];
+      document.getElementById('onbFeedback').innerHTML = msg ? '<div class="' + (kind || 'info-box') + '">' + esc(msg) + '</div>' : '';
+      document.getElementById('onbQuestion').textContent = q.label;
+      document.getElementById('onbCopy').textContent = q.copy;
+      document.getElementById('onbBack').style.visibility = onbStep === 0 ? 'hidden' : 'visible';
+      document.getElementById('onbNext').textContent = onbStep === ONBOARDING.length - 1 ? 'Créer mon espace →' : 'Continuer →';
+
+      var dots = '';
+      for (var i = 0; i < ONBOARDING.length; i++) {
+        var cls = 'dot';
+        if (i < onbStep) cls += ' done';
+        if (i === onbStep) cls += ' current';
+        dots += '<span class="' + cls + '"></span>';
+      }
+      document.getElementById('onbDots').innerHTML = dots;
+
+      var box = document.getElementById('onbInput');
+      if (q.type === 'choice') {
+        box.innerHTML = '<div class="choice-list">' + q.options.map(function(option) {
+          var active = getChoiceValue(option, q.key) === onbValues[q.key];
+          return '<button class="choice-btn' + (active ? ' active' : '') + '" data-choice="' + escAttr(option) + '">' + esc(option) + '</button>';
+        }).join('') + '</div>';
+        Array.prototype.forEach.call(box.querySelectorAll('.choice-btn'), function(btn) {
+          btn.onclick = function() {
+            onbValues[q.key] = getChoiceValue(btn.getAttribute('data-choice'), q.key);
+            renderOnboarding();
+          };
+        });
+      } else {
+        box.innerHTML = '<input id="onbField" class="field" type="' + q.type + '" placeholder="' + escAttr(q.placeholder) + '" value="' + escAttr(onbValues[q.key]) + '">';
+        var field = document.getElementById('onbField');
+        field.focus();
+        field.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') nextOnboarding();
+        });
+      }
+    }
+
+    function getChoiceValue(label, key) {
+      if (key === 'ton') {
+        if (label.indexOf('Bienveillant') !== -1) return 'Bienveillant';
+        if (label.indexOf('Direct') !== -1) return 'Direct';
+        return 'Scientifique';
+      }
+      return label.replace(/^[^\s]+\s/, '');
+    }
+
+    function prevOnboarding() {
+      if (onbStep > 0) {
+        onbStep--;
+        renderOnboarding();
+      }
+    }
+
+    async function nextOnboarding() {
+      var q = ONBOARDING[onbStep];
+      if (q.type !== 'choice') {
+        onbValues[q.key] = document.getElementById('onbField').value.trim();
+      }
+      if (!onbValues[q.key]) {
+        return renderOnboarding('Ce champ est nécessaire pour continuer.', 'error-box');
+      }
+      if (onbStep < ONBOARDING.length - 1) {
+        onbStep++;
+        return renderOnboarding();
+      }
+      try {
+        var payload = {
+          auth_user_id: session.user.id,
+          email: session.user.email,
+          user_code: makeUserCode(onbValues.prenom),
+          prenom: onbValues.prenom,
+          age: parseInt(onbValues.age, 10) || null,
+          poids: parseFloat(normalizeNum(onbValues.poids)) || null,
+          objectif_poids: parseFloat(normalizeNum(onbValues.obj_poids)) || null,
+          objectifs: onbValues.objectifs,
+          sport: onbValues.sport,
+          ton_coach: onbValues.ton,
+          onboarding_done: true
+        };
+        document.getElementById('onbNext').disabled = true;
+        var existing = await loadProfile();
+        if (existing && existing.id) {
+          await db('profiles?auth_user_id=eq.' + session.user.id, 'PATCH', payload);
+        } else {
+          await db('profiles', 'POST', payload);
+        }
+        profile = await loadProfile();
+        await loadAllData();
+        currentTab = 'home';
+        showApp();
+      } catch (e) {
+        console.error(e);
+        renderOnboarding(cleanError(e), 'error-box');
+      } finally {
+        document.getElementById('onbNext').disabled = false;
+      }
+    }
+
+    function showApp() {
+      hideAll();
+      show('app');
+      renderApp();
+    }
+
+    function renderApp() {
+      var app = document.getElementById('app');
+      if (!profile) return;
+      var install = deferredPrompt ? '<div class="install-banner"><div><strong>Installer VIVARKA</strong><div class="muted">Ajoute l’app à ton écran d’accueil pour un accès rapide.</div></div><button id="installBtn">Installer</button></div>' : '';
+      app.innerHTML = ''
+        + '<header class="app-header">'
+        +   '<div class="brand-inline"><div class="app-mark">VK</div><strong>VIVARKA</strong></div>'
+        +   '<div class="user-chip">' + esc(profile.prenom || 'Profil') + ' · ' + formatKg(profile.poids) + '</div>'
+        + '</header>'
+        + '<div class="layout">'
+        +   '<aside class="sidebar">'
+        +     '<div class="side-card">'
+        +       '<div class="brand-inline" style="margin-bottom:14px;"><div class="app-mark">VK</div><strong>VIVARKA</strong></div>'
+        +       '<div class="muted" style="margin-bottom:14px;">Nutrition, sommeil, activité et coach IA dans une seule trajectoire.</div>'
+        +       '<nav class="side-nav">' + renderNavButtons('side-btn') + '</nav>'
+        +     '</div>'
+        +   '</aside>'
+        +   '<main class="content">' + install + renderCurrentTab() + '</main>'
+        + '</div>'
+        + '<nav class="bottom-nav">' + renderNavButtons('nav-btn') + '</nav>';
+      bindAppEvents();
+    }
+
+    function renderNavButtons(cls) {
+      var tabs = [
+        { key: 'home', icon: '🏠', label: 'Accueil' },
+        { key: 'nutrition', icon: '🍽️', label: 'Nutrition' },
+        { key: 'sleep', icon: '💤', label: 'Sommeil' },
+        { key: 'chat', icon: '🤖', label: 'Coach IA' },
+        { key: 'profile', icon: '⚙️', label: 'Profil' }
+      ];
+      return tabs.map(function(tab) {
+        return '<button class="' + cls + (currentTab === tab.key ? ' active' : '') + '" data-tab="' + tab.key + '">' + tab.icon + '<span>' + tab.label + '</span></button>';
+      }).join('');
+    }
+
+    function bindAppEvents() {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-tab]'), function(btn) {
+        btn.onclick = function() {
+          currentTab = btn.getAttribute('data-tab');
+          renderApp();
+        };
+      });
+      var installBtn = document.getElementById('installBtn');
+      if (installBtn) {
+        installBtn.onclick = installApp;
+      }
+      bindTabEvents();
+    }
+
+    function bindTabEvents() {
+      if (currentTab === 'home') {
+        var cta = document.getElementById('coachCta');
+        if (cta) cta.onclick = function() { currentTab = 'chat'; renderApp(); };
+      }
+      if (currentTab === 'chat') {
+        var input = document.getElementById('chatInput');
+        var send = document.getElementById('sendBtn');
+        if (input) {
+          autoResize(input);
+          input.addEventListener('input', function() { autoResize(input); });
+          input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              sendMessage();
+            }
+          });
+        }
+        if (send) send.onclick = sendMessage;
+        Array.prototype.forEach.call(document.querySelectorAll('[data-suggest]'), function(btn) {
+          btn.onclick = function() {
+            var txt = btn.getAttribute('data-suggest');
+            document.getElementById('chatInput').value = txt;
+            autoResize(document.getElementById('chatInput'));
+            document.getElementById('chatInput').focus();
+          };
+        });
+        var back = document.getElementById('chatBack');
+        if (back) back.onclick = function() { currentTab = 'home'; renderApp(); };
+        scrollChat();
+      }
+      if (currentTab === 'profile') {
+        Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'), function(btn) {
+          btn.onclick = function() { editProfileField(btn.getAttribute('data-edit')); };
+        });
+        var reset = document.getElementById('resetProfileBtn');
+        if (reset) reset.onclick = resetProfile;
+        var logout = document.getElementById('logoutBtn');
+        if (logout) logout.onclick = logout;
+      }
+    }
+
+    function renderCurrentTab() {
+      if (currentTab === 'nutrition') return renderNutrition();
+      if (currentTab === 'sleep') return renderSleep();
+      if (currentTab === 'chat') return renderChat();
+      if (currentTab === 'profile') return renderProfile();
+      return renderHome();
+    }
+
+    function renderHome() {
+      var todayMeals = mealsForDay(todayISO());
+      var todaySleep = sleepForDay(todayISO());
+      var kcal = sum(todayMeals, 'calories');
+      var prot = sum(todayMeals, 'proteines');
+      var sleepH = todaySleep ? (todaySleep.duree_min || 0) / 60 : 0;
+      var score = todayMeals.length ? Math.round(avg(todayMeals.map(function(x) { return Number(x.score) || 0; }))) : null;
+      var weekMeals = lastDaysMeals(7);
+      var weekScores = meals.length ? avg(weekMeals.map(function(x) { return Number(x.score) || 0; }).filter(Boolean)) : 0;
+      var alerts = buildAlerts(kcal, prot, sleepH);
+      return ''
+        + sectionHead('Accueil', 'Score du jour, repères essentiels et accès rapide au coach.')
+        + '<section class="card hero-card">'
+        +   '<div>'
+        +     '<div class="eyebrow">' + esc(formatLongDate(new Date())) + '</div>'
+        +     '<div class="score-row" style="margin-top:16px;">'
+        +       scoreRing(score)
+        +       '<div>'
+        +         '<div class="hero-score">Score VIVARKA</div>'
+        +         '<div class="quality-badge">' + scoreBadge(score) + '</div>'
+        +       '</div>'
+        +     '</div>'
+        +   '</div>'
+        +   '<div>'
+        +     '<div class="inline-stats">'
+        +       miniStat('🔥', kcal ? kcal + ' kcal' : '—', 'Calories')
+        +       miniStat('💪', prot ? round1(prot) + ' g' : '—', 'Protéines')
+        +       miniStat('💤', sleepH ? round1(sleepH) + ' h' : '—', 'Sommeil')
+        +     '</div>'
+        +     '<div class="progress-block" style="margin-top:16px;">'
+        +       progressItem('Calories', kcal, 2000)
+        +       progressItem('Protéines', prot, 150)
+        +     '</div>'
+        +   '</div>'
+        + '</section>'
+        + '<section class="stats-grid">'
+        +   statBox(avgKcalWeek(weekMeals), 'Moy. calories')
+        +   statBox(avgProtWeek(weekMeals), 'Moy. protéines')
+        +   statBox(weekScores ? Math.round(weekScores) + '/100' : '—', 'Score moyen')
+        + '</section>'
+        + '<section class="section-head"><h2 class="section-title">Alertes du jour</h2></section>'
+        + (alerts.length ? '<div class="alert-list">' + alerts.map(renderAlert).join('') + '</div>' : emptyState('RAS pour le moment', 'Tes indicateurs du jour sont stables. Continue à logger tes données avec le Coach IA.'))
+        + '<section class="section-head"><h2 class="section-title">Repas du jour</h2><span class="muted">' + todayMeals.length + ' entrée' + (todayMeals.length > 1 ? 's' : '') + '</span></section>'
+        + (todayMeals.length ? '<div class="meal-list">' + todayMeals.map(renderMeal).join('') + '</div>' : emptyState("Aucun repas aujourd'hui", "Dis au Coach IA ce que tu as mangé pour remplir automatiquement ton journal."))
+        + '<button id="coachCta" class="cta-coach"><span><b>🤖 Parler au Coach IA</b><span>Log tes repas, sommeil, sport en parlant naturellement</span></span><span>→</span></button>';
+    }
+
+    function renderNutrition() {
+      var days = getLastDays(7);
+      var blocks = days.map(function(day) {
+        var dayMeals = mealsForDay(day);
+        if (!dayMeals.length) return '';
+        var dayScore = avg(dayMeals.map(function(x) { return Number(x.score) || 0; }).filter(Boolean));
+        return '<div class="day-card">'
+          + '<div class="day-head"><div><strong>' + esc(formatDayOnly(day)) + '</strong><span>' + esc(day) + '</span></div>'
+          + '<div class="muted">' + sum(dayMeals, 'calories') + ' kcal · ' + round1(sum(dayMeals, 'proteines')) + ' g prot · ' + (dayScore ? Math.round(dayScore) + '/100' : '—') + '</div></div>'
+          + '<div class="meal-list">' + dayMeals.map(renderMeal).join('') + '</div>'
+          + '</div>';
+      }).filter(Boolean).join('');
+      return sectionHead('Nutrition', 'Vue des 7 derniers jours, regroupée par journée.')
+        + (blocks || emptyState('Aucun repas enregistré', 'Dis au Coach IA ce que tu as mangé pour démarrer ton historique nutrition.'));
+    }
+
+    function renderSleep() {
+      var last14 = sleeps.slice().sort(byDateDesc).slice(0, 14).reverse();
+      var avgSleep = last14.length ? avg(last14.map(function(s) { return Number(s.duree_min) || 0; })) / 60 : 0;
+      var best = last14.length ? last14.slice().sort(function(a, b) { return (b.duree_min || 0) - (a.duree_min || 0); })[0] : null;
+      return sectionHead('Sommeil', 'Tendance des 14 dernières nuits et repères de récupération.')
+        + '<section class="quick-grid" style="grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:16px;">'
+        +   statBox(avgSleep ? round1(avgSleep) + ' h' : '—', 'Moyenne 14 nuits')
+        +   statBox(best ? minutesToHours(best.duree_min) : '—', 'Meilleure nuit')
+        + '</section>'
+        + (last14.length ? '<section class="sleep-card"><h3 class="card-title">Historique</h3><div class="sleep-bars">' + last14.map(renderSleepBar).join('') + '</div></section>' : emptyState('Aucune nuit enregistrée', 'Dis au Coach IA combien de temps tu as dormi pour suivre ta récupération.'));
+    }
+
+    function renderChat() {
+      var list = conversations.slice().sort(function(a, b) { return new Date(a.created_at) - new Date(b.created_at); });
+      if (!list.length) {
+        list = [{
+          role: 'assistant',
+          content: 'Bienvenue sur VIVARKA. Dis-moi ce que tu as mangé, comment tu as dormi, ou quelle séance tu as faite, et je m’occupe du reste.'
+        }];
+      }
+      return ''
+        + '<section class="chat-screen">'
+        +   '<div class="chat-bar"><button id="chatBack" class="back-btn">←</button><div class="app-mark" style="width:28px;height:28px;font-size:9px;">VK</div><div><strong>Coach IA VIVARKA</strong><div class="muted">Analyse et enregistre automatiquement tes données</div></div></div>'
+        +   '<div class="suggest-strip">'
+        +     suggestBtn('🍽️ Repas', "J'ai mangé ")
+        +     suggestBtn('💤 Sommeil', "J'ai dormi ")
+        +     suggestBtn('🏋️ Sport', "J'ai fait ")
+        +     suggestBtn('📊 Bilan', 'Mon bilan semaine')
+        +     suggestBtn('🌙 Ce soir ?', 'Que manger ce soir ?')
+        +     suggestBtn('💪 Protéines', 'Mes protéines aujourd’hui ?')
+        +   '</div>'
+        +   '<div class="chat-panel"><div id="chatList" class="chat-list">' + list.map(renderChatRow).join('') + (sending ? renderTyping() : '') + '</div></div>'
+        +   '<div class="composer"><textarea id="chatInput" class="text-area" placeholder="Parle naturellement : repas, sommeil, sport, question nutrition..."></textarea><button id="sendBtn" class="send-btn">↑</button></div>'
+        + '</section>';
+    }
+
+    function renderProfile() {
+      var stats = {
+        meals: meals.length,
+        sleeps: sleeps.length,
+        activities: activities.length
+      };
+      var fields = [
+        ['prenom', 'Prénom', profile.prenom || '—'],
+        ['age', 'Âge', profile.age || '—'],
+        ['poids', 'Poids', formatKg(profile.poids)],
+        ['objectif_poids', 'Objectif', formatKg(profile.objectif_poids)],
+        ['objectifs', 'Objectifs', profile.objectifs || '—'],
+        ['sport', 'Sport', profile.sport || '—'],
+        ['ton_coach', 'Ton du coach', profile.ton_coach || 'Bienveillant'],
+        ['user_code', 'Code VIVARKA', profile.user_code || '—']
+      ];
+      return sectionHead('Profil', 'Modifie ton profil au clic, ou réinitialise la session locale si besoin.')
+        + '<section class="card" style="margin-bottom:16px;"><h3 class="card-title">Infos utilisateur</h3><div class="profile-list" style="margin-top:14px;">'
+        + fields.map(function(field) {
+          return '<div class="profile-line"><div><strong>' + esc(field[1]) + '</strong><span>' + esc(String(field[2])) + '</span></div><button data-edit="' + field[0] + '">✎</button></div>';
+        }).join('')
+        + '</div></section>'
+        + '<section class="quick-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));">' 
+        +   statBox(stats.meals, 'Repas')
+        +   statBox(stats.sleeps, 'Nuits')
+        +   statBox(stats.activities, 'Séances')
+        + '</section>'
+        + '<button id="logoutBtn" class="ghost-btn" style="width:100%; margin-top:14px; color:var(--ink); border-color:var(--border);">Déconnexion</button>'
+        + '<button id="resetProfileBtn" class="reset-btn">Réinitialiser le profil</button>';
+    }
+
+    async function installApp() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      try { await deferredPrompt.userChoice; } catch (e) {}
+      deferredPrompt = null;
+      renderApp();
+    }
+
+    async function sendMessage() {
+      if (sending) return;
+      var input = document.getElementById('chatInput');
+      var text = input.value.trim();
+      if (!text) return;
+      sending = true;
+      input.value = '';
+      autoResize(input);
+      var localUserMsg = {
+        role: 'user',
+        content: text,
+        created_at: new Date().toISOString()
+      };
+      conversations.push(localUserMsg);
+      renderApp();
+      try {
+        await saveConversation('user', text);
+        var hist = conversations.slice().sort(function(a, b) {
+          return new Date(a.created_at) - new Date(b.created_at);
+        }).slice(-20).map(function(item) {
+          return { role: item.role === 'assistant' ? 'assistant' : 'user', content: item.content };
+        });
+        var botReply = await askClaude(hist);
+        conversations.push({ role: 'assistant', content: botReply, created_at: new Date().toISOString() });
+        await saveConversation('assistant', botReply);
+        await autoSave(text, botReply);
+        await loadAllData();
+        renderApp();
+      } catch (e) {
+        console.error('Erreur Coach IA:', e);
+        conversations.push({
+          role: 'assistant',
+          content: 'Je n’ai pas réussi à répondre maintenant.\n\nDétail technique : ' + cleanError(e),
+          created_at: new Date().toISOString()
+        });
+        renderApp();
+      } finally {
+        sending = false;
+        renderApp();
+      }
+    }
+
+    async function askClaude(hist) {
+      var r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          system: buildSystemPrompt(profile),
+          messages: hist
+        })
+      });
+      var raw = await r.text();
+      var data = null;
+      try {
+        data = raw ? JSON.parse(raw) : null;
+      } catch (e) {}
+      if (!r.ok) {
+        var apiMsg = (data && data.error && (data.error.message || data.error.type)) || raw || ('HTTP ' + r.status);
+        throw new Error('Anthropic ' + r.status + ' : ' + apiMsg);
+      }
+      if (!data || !data.content || !data.content[0] || !data.content[0].text) {
+        throw new Error('Réponse IA invalide.');
+      }
+      return data.content[0].text.trim();
+    }
+
+    function buildSystemPrompt(user) {
+      return [
+        'Tu es le Coach IA VIVARKA de ' + (user.prenom || 'cet utilisateur') + '.',
+        'Ton domaine complet : nutrition, alimentation, recettes, cuisine saine, chrononutrition, préparation des aliments, sport, musculation, récupération, sommeil, bien-être, compléments alimentaires, biohacking.',
+        '',
+        "Quand l'utilisateur mentionne un REPAS :",
+        '→ Analyse (estime calories, protéines, qualité)',
+        '→ Confirme EXACTEMENT dans ce format :',
+        '"✅ Enregistré : [description courte] — [X] kcal · [X]g protéines · Score [X]/100"',
+        '→ Puis 1-2 phrases de conseil actionnable',
+        '',
+        "Quand il mentionne son SOMMEIL :",
+        '→ Format : "✅ Sommeil enregistré : [X]h — [commentaire]"',
+        '',
+        "Quand il mentionne du SPORT :",
+        '→ Format : "✅ Séance enregistrée : [type] · ~[X] kcal"',
+        '',
+        'Adapte ton ton selon ' + (user.ton_coach || 'Bienveillant') + ' :',
+        '- "Bienveillant" : chaleureux, félicite d’abord puis corrige',
+        '- "Direct" : va droit au but, pas de fioritures',
+        '- "Scientifique" : cite des mécanismes biologiques, études',
+        '',
+        'RÈGLES ABSOLUES :',
+        '- Toujours répondre en FRANÇAIS',
+        '- Maximum 4 phrases',
+        '- Ne JAMAIS refuser une question sur la nutrition/cuisine/sport/sommeil/compléments',
+        '- Ne pas poser de questions inutiles — analyse avec les infos disponibles',
+        '',
+        'PROFIL UTILISATEUR :',
+        '- ' + (user.prenom || 'Utilisateur') + ', ' + (user.age || '?') + ' ans, ' + (user.poids || '?') + 'kg',
+        '- Objectif : ' + (user.objectif_poids || '?') + 'kg',
+        '- Sport : ' + (user.sport || 'non précisé'),
+        '- Besoins : ~2000 kcal/j, 130-150g protéines/j',
+        '- Objectifs : ' + (user.objectifs || 'non précisé')
+      ].join('\n');
+    }
+
+    async function autoSave(userMsg, botReply) {
+      var low = userMsg.toLowerCase();
+      var mealKw = ['mangé', 'manger', 'petit dej', 'déjeuner', 'dîner', 'collation', 'repas', 'ai eu', 'ai pris'];
+      var sleepKw = ['dormi', 'nuit', 'sommeil', 'réveillé', 'couché'];
+      var actKw = ['salle', 'sport', 'muscu', 'cardio', 'vélo', 'course', 'séance', 'entraîn', 'workout'];
+      var hasMeal = mealKw.some(function(k) { return low.indexOf(k) !== -1; }) || /✅\s*Enregistré/i.test(botReply);
+      var hasSleep = sleepKw.some(function(k) { return low.indexOf(k) !== -1; }) || /✅\s*Sommeil enregistré/i.test(botReply);
+      var hasAct = actKw.some(function(k) { return low.indexOf(k) !== -1; }) || /✅\s*Séance enregistrée/i.test(botReply);
+      var cal = botReply.match(/(\d+)\s*kcal/i);
+      var prot = botReply.match(/(\d+(?:[.,]\d+)?)\s*g(?:rammes?)?\s*(?:de\s*)?prot/i) || botReply.match(/(\d+(?:[.,]\d+)?)\s*g\s*protéines/i);
+      var score = botReply.match(/score\s*[:\s]*(\d+)/i);
+      var dur = botReply.match(/(\d+)\s*h(?:\s*(\d{1,2}))?/i);
+      if (hasMeal && cal && (prot || score)) {
+        var desc = extractMealLabel(botReply, userMsg);
+        await db('meals', 'POST', {
+          auth_user_id: session.user.id,
+          description: desc,
+          score: score ? parseInt(score[1], 10) : null,
+          calories: cal ? parseInt(cal[1], 10) : null,
+          proteines: prot ? parseFloat(normalizeNum(prot[1])) : null,
+          graisses: null,
+          glucides: null,
+          heure: currentHour(),
+          date: todayISO(),
+          notes: ''
+        });
+      } else if (hasSleep && dur) {
+        await db('sleep', 'POST', {
+          auth_user_id: session.user.id,
+          duree_min: parseInt(dur[1], 10) * 60 + (parseInt(dur[2] || '0', 10)),
+          qualite: inferSleepQuality(botReply),
+          score: sleepScoreFromDuration(parseInt(dur[1], 10) * 60 + (parseInt(dur[2] || '0', 10))),
+          date: todayISO()
+        });
+      } else if (hasAct) {
+        var kcal = botReply.match(/~?\s*(\d+)\s*kcal/i);
+        await db('activity', 'POST', {
+          auth_user_id: session.user.id,
+          type: extractActivityType(botReply, userMsg),
+          duree_min: extractDurationMin(userMsg, botReply),
+          calories: kcal ? parseInt(kcal[1], 10) : null,
+          description: userMsg,
+          date: todayISO()
+        });
+      }
+    }
+
+    async function saveConversation(role, content) {
+      return db('conversations', 'POST', {
+        auth_user_id: session.user.id,
+        role: role,
+        content: content
+      });
+    }
+
+    async function loadAllData() {
+      try {
+        var encodedId = encodeURIComponent(session.user.id);
+        var results = await Promise.all([
+          db('meals?auth_user_id=eq.' + encodedId + '&order=date.desc,created_at.desc'),
+          db('sleep?auth_user_id=eq.' + encodedId + '&order=date.desc,created_at.desc'),
+          db('activity?auth_user_id=eq.' + encodedId + '&order=date.desc,created_at.desc'),
+          db('conversations?auth_user_id=eq.' + encodedId + '&order=created_at.asc')
+        ]);
+        meals = results[0] || [];
+        sleeps = results[1] || [];
+        activities = results[2] || [];
+        conversations = results[3] || [];
+      } catch (e) {
+        console.error(e);
+        meals = [];
+        sleeps = [];
+        activities = [];
+        conversations = [];
+      }
+    }
+
+    async function loadProfile() {
+      var res = await db('profiles?auth_user_id=eq.' + encodeURIComponent(session.user.id) + '&limit=1');
+      return res && res[0] ? res[0] : null;
+    }
+
+    async function editProfileField(key) {
+      if (key === 'user_code') return alert('Le code VIVARKA est généré automatiquement et non modifiable.');
+      var current = profile[key] == null ? '' : String(profile[key]);
+      var next = prompt('Modifier ' + key.replace('_', ' ') + ' :', current);
+      if (next == null) return;
+      var value = next.trim();
+      if (!value) return;
+      var patch = {};
+      patch[key] = (key === 'age') ? parseInt(value, 10) : (key === 'poids' || key === 'objectif_poids') ? parseFloat(normalizeNum(value)) : value;
+      try {
+        await db('profiles?auth_user_id=eq.' + encodeURIComponent(session.user.id), 'PATCH', patch);
+        profile = await loadProfile();
+        renderApp();
+      } catch (e) {
+        alert(cleanError(e));
+      }
+    }
+
+    async function logout() {
+      clearSession();
+      profile = null;
+      meals = [];
+      sleeps = [];
+      activities = [];
+      conversations = [];
+      showAuth('Session fermée.', 'success-box');
+    }
+
+    async function resetProfile() {
+      if (!confirm('Réinitialiser la session locale et revenir au début ?')) return;
+      await logout();
+      location.reload();
+    }
+
+    async function db(path, method, body) {
+      var headers = {
+        'Content-Type': 'application/json',
+        'apikey': SB_KEY
+      };
+      if (session && session.access_token) {
+        headers.Authorization = 'Bearer ' + session.access_token;
+      } else {
+        headers.Authorization = 'Bearer ' + SB_KEY;
+      }
+      if (method === 'POST') headers.Prefer = 'return=representation';
+      var r = await fetch(SB_URL + '/rest/v1/' + path, {
+        method: method || 'GET',
+        headers: headers,
+        body: body ? JSON.stringify(body) : undefined
+      });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json().catch(function() { return null; });
+    }
+
+    async function signUp(email, password) {
+      var r = await fetch(SB_URL + '/auth/v1/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SB_KEY
+        },
+        body: JSON.stringify({ email: email, password: password })
+      });
+      var data = await r.json().catch(function() { return {}; });
+      if (!r.ok) throw new Error(data.msg || data.error_description || data.error || 'Inscription impossible.');
+      return data;
+    }
+
+    async function signIn(email, password) {
+      var r = await fetch(SB_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SB_KEY
+        },
+        body: JSON.stringify({ email: email, password: password })
+      });
+      var data = await r.json().catch(function() { return {}; });
+      if (!r.ok) throw new Error(data.error_description || data.error || 'Connexion impossible.');
+      data.user = data.user || parseJwtUser(data.access_token);
+      return data;
+    }
+
+    async function refreshSession(refreshToken) {
+      var r = await fetch(SB_URL + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SB_KEY
+        },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+      var data = await r.json().catch(function() { return {}; });
+      if (!r.ok) throw new Error(data.error_description || data.error || 'Session expirée.');
+      data.user = data.user || parseJwtUser(data.access_token);
+      return data;
+    }
+
+    function persistSession(data) {
+      if (!data) return;
+      localStorage.setItem('vk_session', JSON.stringify({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at: data.expires_at || (Math.floor(Date.now() / 1000) + (data.expires_in || 3600)),
+        user: data.user
+      }));
+    }
+
+    function readSession() {
+      try {
+        var raw = localStorage.getItem('vk_session');
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function clearSession() {
+      localStorage.removeItem('vk_session');
+    }
+
+    function isExpired(data) {
+      return !data || !data.expires_at || (Date.now() / 1000) > (data.expires_at - 60);
+    }
+
+    function parseJwtUser(token) {
+      try {
+        var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return { id: payload.sub, email: payload.email };
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function makeUserCode(prenom) {
+      var letters = (prenom || 'VIVA').toUpperCase().replace(/[^A-ZÀ-ÿ]/g, '').slice(0, 4);
+      while (letters.length < 4) letters += 'X';
+      return letters + String(Math.floor(1000 + Math.random() * 9000));
+    }
+
+    function todayISO() {
+      var d = new Date();
+      return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    }
+
+    function formatLongDate(d) {
+      return new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(d);
+    }
+
+    function formatDayOnly(iso) {
+      return new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00'));
+    }
+
+    function formatKg(v) {
+      return v || v === 0 ? round1(v) + ' kg' : '—';
+    }
+
+    function round1(v) {
+      return Math.round(Number(v || 0) * 10) / 10;
+    }
+
+    function sum(arr, key) {
+      return Math.round(arr.reduce(function(acc, item) {
+        return acc + Number(item[key] || 0);
+      }, 0) * 10) / 10;
+    }
+
+    function avg(arr) {
+      if (!arr.length) return 0;
+      return arr.reduce(function(a, b) { return a + Number(b || 0); }, 0) / arr.length;
+    }
+
+    function avgKcalWeek(arr) {
+      return arr.length ? Math.round(sum(arr, 'calories') / Math.min(7, uniqueDays(arr, 'date'))) + ' kcal' : '—';
+    }
+
+    function avgProtWeek(arr) {
+      return arr.length ? round1(sum(arr, 'proteines') / Math.min(7, uniqueDays(arr, 'date'))) + ' g' : '—';
+    }
+
+    function uniqueDays(arr, key) {
+      var seen = {};
+      arr.forEach(function(item) { seen[item[key]] = true; });
+      return Math.max(1, Object.keys(seen).length);
+    }
+
+    function currentHour() {
+      return new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date());
+    }
+
+    function sleepForDay(day) {
+      return sleeps.find(function(s) { return s.date === day; }) || null;
+    }
+
+    function mealsForDay(day) {
+      return meals.filter(function(m) { return m.date === day; });
+    }
+
+    function lastDaysMeals(n) {
+      var days = getLastDays(n);
+      return meals.filter(function(m) { return days.indexOf(m.date) !== -1; });
+    }
+
+    function getLastDays(n) {
+      var out = [];
+      for (var i = 0; i < n; i++) {
+        var d = new Date();
+        d.setDate(d.getDate() - i);
+        out.push(new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10));
+      }
+      return out;
+    }
+
+    function byDateDesc(a, b) {
+      return new Date(b.date || b.created_at) - new Date(a.date || a.created_at);
+    }
+
+    function sectionHead(title, sub) {
+      return '<section class="section-head"><div><h1 class="section-title">' + esc(title) + '</h1><div class="section-sub">' + esc(sub) + '</div></div></section>';
+    }
+
+    function miniStat(icon, value, label) {
+      return '<div class="mini-stat"><strong>' + esc(icon + ' ' + value) + '</strong><span>' + esc(label) + '</span></div>';
+    }
+
+    function statBox(value, label) {
+      return '<div class="stat-box"><strong>' + esc(String(value)) + '</strong><span>' + esc(label) + '</span></div>';
+    }
+
+    function progressItem(label, value, max) {
+      var pct = Math.max(0, Math.min(100, Math.round((Number(value || 0) / max) * 100)));
+      return '<div><div class="chat-top" style="margin-bottom:8px;"><strong>' + esc(label) + '</strong><span class="muted">' + esc(String(Math.round(Number(value || 0)))) + ' / ' + esc(String(max)) + '</span></div><div class="progress-line"><b style="width:' + pct + '%;"></b></div></div>';
+    }
+
+    function scoreRing(score) {
+      var safeScore = score == null ? 0 : score;
+      var circ = 251.2;
+      var offset = circ - (Math.max(0, Math.min(100, safeScore)) / 100) * circ;
+      var color = scoreColor(score);
+      return '<div class="score-wrap"><svg class="score-ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="rgba(61,107,94,0.1)" stroke-width="8" fill="none"></circle><circle cx="50" cy="50" r="40" stroke="' + color + '" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="' + circ + '" stroke-dashoffset="' + offset + '"></circle></svg><div class="score-center"><div class="score-number">' + (score == null ? '—' : Math.round(score)) + '</div><div class="score-label">/100</div></div></div>';
+    }
+
+    function scoreColor(score) {
+      if (score == null) return '#C8A96E';
+      if (score >= 80) return '#3D6B5E';
+      if (score >= 65) return '#5A9688';
+      if (score >= 50) return '#A8873A';
+      return '#B86A60';
+    }
+
+    function scoreBadge(score) {
+      if (score == null) return '🟡 Aucun score';
+      if (score >= 80) return '🟢 Excellent';
+      if (score >= 65) return '🔵 Bien';
+      if (score >= 50) return '🟡 Moyen';
+      return '🔴 À améliorer';
+    }
+
+    function buildAlerts(kcal, prot, sleepH) {
+      var out = [];
+      if (kcal && kcal < 1600) out.push({ cls: 'warn', icon: '⚠️', title: 'Calories insuffisantes', text: 'Tu es sous 1600 kcal pour le moment.' });
+      if (prot && prot < 130) out.push({ cls: 'warn', icon: '💪', title: 'Protéines sous l’objectif', text: 'Il manque encore des protéines pour la journée.' });
+      if (sleepH && sleepH < 6) out.push({ cls: 'crit', icon: '💤', title: 'Sommeil critique', text: 'Moins de 6h de sommeil enregistrées.' });
+      if (prot >= 130) out.push({ cls: 'ok', icon: '✅', title: 'Protéines atteintes', text: 'Objectif protéines validé pour aujourd’hui.' });
+      return out;
+    }
+
+    function renderAlert(item) {
+      return '<div class="alert-item ' + item.cls + '"><div>' + item.icon + '</div><div><strong>' + esc(item.title) + '</strong><div class="muted">' + esc(item.text) + '</div></div></div>';
+    }
+
+    function renderMeal(meal) {
+      return '<div class="meal-item"><div class="meal-main"><strong>🍽️ ' + esc(meal.description || 'Repas') + '</strong><span>' + esc(meal.heure || '—') + ' · ' + esc(String(meal.calories || 0)) + ' kcal · ' + esc(String(round1(meal.proteines || 0))) + ' g prot</span></div><div class="score-chip" style="background:' + scoreColor(meal.score) + ';">' + esc(String(meal.score || '—')) + '</div></div>';
+    }
+
+    function renderSleepBar(item) {
+      var h = (Number(item.duree_min || 0) / 60);
+      var width = Math.max(4, Math.min(100, Math.round((h / 9) * 100)));
+      var color = h >= 7 ? 'var(--sage)' : h >= 6 ? 'var(--gold)' : 'var(--blush)';
+      return '<div class="sleep-bar"><span>' + esc(formatDayOnly(item.date)) + '</span><div class="sleep-track"><b style="width:' + width + '%; background:' + color + ';"></b></div><strong>' + esc(minutesToHours(item.duree_min || 0)) + '</strong></div>';
+    }
+
+    function renderChatRow(msg) {
+      var isUser = msg.role === 'user';
+      return '<div class="chat-row ' + (isUser ? 'user' : 'bot') + '">' + (isUser ? '' : '<div class="avatar">🤖</div>') + '<div class="chat-bubble">' + nl2br(esc(msg.content || '')) + '</div></div>';
+    }
+
+    function renderTyping() {
+      return '<div class="chat-row bot"><div class="avatar">🤖</div><div class="chat-bubble"><span class="typing"><i></i><i></i><i></i></span></div></div>';
+    }
+
+    function emptyState(title, text) {
+      return '<div class="empty-state"><strong>' + esc(title) + '</strong>' + esc(text) + '</div>';
+    }
+
+    function suggestBtn(label, value) {
+      return '<button class="mini-btn" data-suggest="' + escAttr(value) + '">' + esc(label) + '</button>';
+    }
+
+    function autoResize(el) {
+      el.style.height = '48px';
+      el.style.height = Math.min(el.scrollHeight, 90) + 'px';
+    }
+
+    function scrollChat() {
+      setTimeout(function() {
+        var box = document.getElementById('chatList');
+        if (box) box.scrollTop = box.scrollHeight;
+      }, 50);
+    }
+
+    function normalizeNum(v) {
+      return String(v).replace(',', '.');
+    }
+
+    function minutesToHours(min) {
+      var h = Math.floor((min || 0) / 60);
+      var m = (min || 0) % 60;
+      return h + 'h' + (m ? String(m).padStart(2, '0') : '');
+    }
+
+    function inferSleepQuality(text) {
+      var low = (text || '').toLowerCase();
+      if (low.indexOf('excellent') !== -1 || low.indexOf('bonne') !== -1) return 'bonne';
+      if (low.indexOf('moyen') !== -1) return 'moyenne';
+      return 'à améliorer';
+    }
+
+    function sleepScoreFromDuration(min) {
+      if (min >= 480) return 90;
+      if (min >= 420) return 75;
+      if (min >= 360) return 58;
+      return 40;
+    }
+
+    function extractMealLabel(botReply, userMsg) {
+      var m = botReply.match(/✅\s*Enregistré\s*:\s*(.+?)\s*—/i);
+      if (m && m[1]) return m[1].trim();
+      return userMsg.slice(0, 120);
+    }
+
+    function extractActivityType(botReply, userMsg) {
+      var m = botReply.match(/✅\s*Séance enregistrée\s*:\s*([^·\n]+)/i);
+      if (m && m[1]) return m[1].trim();
+      if (/vélo/i.test(userMsg)) return 'Vélo';
+      if (/course|cardio/i.test(userMsg)) return 'Cardio';
+      if (/muscu|salle/i.test(userMsg)) return 'Musculation';
+      return 'Activité';
+    }
+
+    function extractDurationMin(userMsg, botReply) {
+      var txt = userMsg + ' ' + botReply;
+      var h = txt.match(/(\d+)\s*h/i);
+      var min = txt.match(/(\d+)\s*min/i);
+      return (h ? parseInt(h[1], 10) * 60 : 0) + (min ? parseInt(min[1], 10) : 0) || null;
+    }
+
+    function cleanError(e) {
+      var msg = e && e.message ? e.message : 'Une erreur est survenue.';
+      msg = msg.replace(/"/g, '');
+      if (msg.indexOf('Email not confirmed') !== -1) {
+        return "L'inscription a été créée, mais l'email doit être confirmé. Pour des tests fluides, désactive la confirmation email dans Supabase Auth.";
+      }
+      if (msg.indexOf('Invalid login credentials') !== -1) {
+        return 'Email ou mot de passe incorrect.';
+      }
+      return msg;
+    }
+
+    function nl2br(s) {
+      return s.replace(/\n/g, '<br>');
+    }
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escAttr(s) {
+      return esc(s).replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
