@@ -2595,6 +2595,248 @@
       activityDraft = emptyActivityDraft();
       if (shouldRender !== false) renderApp();
     }
+
+    function buildSystemPrompt(user) {
+      return [
+        'Tu es le Coach IA VIVARKA de ' + (user.prenom || 'cet utilisateur') + '.',
+        'Tu peux conseiller ET piloter les données de l’application.',
+        'Domaines autorisés : nutrition, repas, calories, macros, sommeil, récupération, activité, musculation, cardio, cuisine, compléments et interactions générales liées au bien-être.',
+        '',
+        'Tu dois toujours répondre en FRANÇAIS, de façon utile, concise et naturelle.',
+        'Maximum 4 phrases visibles pour l’utilisateur.',
+        'Ne dis jamais que tu ne peux pas modifier le dashboard : si la demande implique ajouter, modifier ou supprimer, tu dois préparer les actions.',
+        'Ne pose pas de question inutile quand les informations suffisent.',
+        '',
+        'Après ta réponse visible, tu dois TOUJOURS ajouter exactement un bloc machine lisible au format :',
+        '<vivarka_actions>{"actions":[...]}</vivarka_actions>',
+        'Le JSON doit être valide, sans markdown, sans commentaire.',
+        '',
+        'Actions possibles :',
+        '- create_meal',
+        '- update_meal',
+        '- delete_meal',
+        '- create_sleep',
+        '- update_sleep',
+        '- delete_sleep',
+        '- create_activity',
+        '- update_activity',
+        '- delete_activity',
+        '- none',
+        '',
+        'Règles d’action :',
+        '- Pour create_meal, data peut contenir : description, date, heure, calories, proteines, graisses, glucides, score, notes.',
+        '- Pour update_meal et delete_meal, utilise l’id exact fourni dans le contexte.',
+        '- Pour create_sleep, data peut contenir : date, duree_min, qualite, score.',
+        '- Pour update_sleep et delete_sleep, utilise l’id exact fourni dans le contexte.',
+        '- Pour create_activity, data peut contenir : type, date, duree_min, calories, description.',
+        '- Pour update_activity et delete_activity, utilise l’id exact fourni dans le contexte.',
+        '- Si la demande est seulement un conseil ou une analyse, retourne {"actions":[{"type":"none"}]}.',
+        '- Si plusieurs lignes doivent être enregistrées, retourne plusieurs actions.',
+        '- Si la demande dit supprimer, modifier, corriger, remplacer, annuler, tu dois produire une vraie action quand le contexte suffit.',
+        '',
+        'Quand un repas est fourni en langage naturel, tu peux créer directement l’entrée.',
+        'Quand un message contient un historique sur plusieurs jours, tu peux créer plusieurs actions create_meal ou create_sleep si les données sont assez claires.',
+        '',
+        'PROFIL UTILISATEUR :',
+        JSON.stringify({
+          prenom: user.prenom || '',
+          age: user.age || null,
+          poids: user.poids || null,
+          objectif_poids: user.objectif_poids || null,
+          sport: user.sport || '',
+          ton_coach: user.ton_coach || 'Bienveillant',
+          objectifs: user.objectifs || ''
+        }),
+        '',
+        'CONTEXTE DONNÉES RÉCENTES :',
+        buildAiDataContext()
+      ].join('\n');
+    }
+
+    async function sendMessage() {
+      if (sending) return;
+      var input = document.getElementById('chatInput');
+      var text = input.value.trim();
+      if (!text) return;
+      sending = true;
+      input.value = '';
+      autoResize(input);
+      var localUserMsg = {
+        role: 'user',
+        content: text,
+        created_at: new Date().toISOString()
+      };
+      conversations.push(localUserMsg);
+      renderApp();
+      try {
+        await saveConversation('user', text);
+        var hist = conversations.slice().sort(function(a, b) {
+          return new Date(a.created_at) - new Date(b.created_at);
+        }).slice(-20).map(function(item) {
+          return { role: item.role === 'assistant' ? 'assistant' : 'user', content: item.content };
+        });
+        var rawReply = await askClaude(hist);
+        var parsed = extractAiEnvelope(rawReply);
+        var botReply = parsed.visibleReply || 'C’est noté.';
+        conversations.push({ role: 'assistant', content: botReply, created_at: new Date().toISOString() });
+        await saveConversation('assistant', botReply);
+        if (parsed.actions.length) {
+          await executeAiActions(parsed.actions);
+        } else {
+          await autoSave(text, botReply);
+        }
+        await loadAllData();
+        renderApp();
+      } catch (e) {
+        console.error('Erreur Coach IA:', e);
+        conversations.push({
+          role: 'assistant',
+          content: 'Je n’ai pas réussi à répondre maintenant.\n\nDétail technique : ' + cleanError(e),
+          created_at: new Date().toISOString()
+        });
+        renderApp();
+      } finally {
+        sending = false;
+        renderApp();
+      }
+    }
+
+    function buildAiDataContext() {
+      return JSON.stringify({
+        today: todayISO(),
+        meals: meals.slice().sort(byDateDesc).slice(0, 16).map(function(item) {
+          return {
+            id: item.id,
+            date: item.date,
+            heure: item.heure,
+            description: item.description,
+            calories: item.calories,
+            proteines: item.proteines,
+            graisses: item.graisses,
+            glucides: item.glucides,
+            score: item.score,
+            notes: item.notes
+          };
+        }),
+        sleep: sleeps.slice().sort(byDateDesc).slice(0, 12).map(function(item) {
+          return {
+            id: item.id,
+            date: item.date,
+            duree_min: item.duree_min,
+            qualite: item.qualite,
+            score: item.score
+          };
+        }),
+        activity: activities.slice().sort(byDateDesc).slice(0, 12).map(function(item) {
+          return {
+            id: item.id,
+            date: item.date,
+            type: item.type,
+            duree_min: item.duree_min,
+            calories: item.calories,
+            description: item.description
+          };
+        })
+      });
+    }
+
+    function extractAiEnvelope(rawReply) {
+      var text = String(rawReply || '').trim();
+      var actions = [];
+      var visibleReply = text;
+      var match = text.match(/<vivarka_actions>([\s\S]*?)<\/vivarka_actions>/i);
+      if (match) {
+        visibleReply = text.replace(match[0], '').trim();
+        try {
+          var parsed = JSON.parse(match[1]);
+          actions = parsed && Array.isArray(parsed.actions) ? parsed.actions.filter(function(action) {
+            return action && action.type && action.type !== 'none';
+          }) : [];
+        } catch (e) {
+          actions = [];
+        }
+      }
+      return {
+        visibleReply: visibleReply,
+        actions: actions
+      };
+    }
+
+    async function executeAiActions(actions) {
+      for (var i = 0; i < actions.length; i++) {
+        var action = actions[i] || {};
+        var type = action.type;
+        var data = action.data || {};
+        if (type === 'create_meal') {
+          await db('meals', 'POST', normalizeMealPayload(data));
+        } else if (type === 'update_meal' && action.id) {
+          await db('meals?id=eq.' + action.id + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'PATCH', normalizeMealPayload(data, true));
+        } else if (type === 'delete_meal' && action.id) {
+          await db('meals?id=eq.' + action.id + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'DELETE');
+        } else if (type === 'create_sleep') {
+          await db('sleep', 'POST', normalizeSleepPayload(data));
+        } else if (type === 'update_sleep' && action.id) {
+          await db('sleep?id=eq.' + action.id + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'PATCH', normalizeSleepPayload(data, true));
+        } else if (type === 'delete_sleep' && action.id) {
+          await db('sleep?id=eq.' + action.id + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'DELETE');
+        } else if (type === 'create_activity') {
+          await db('activity', 'POST', normalizeActivityPayload(data));
+        } else if (type === 'update_activity' && action.id) {
+          await db('activity?id=eq.' + action.id + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'PATCH', normalizeActivityPayload(data, true));
+        } else if (type === 'delete_activity' && action.id) {
+          await db('activity?id=eq.' + action.id + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'DELETE');
+        }
+      }
+    }
+
+    function normalizeMealPayload(data, partial) {
+      var payload = partial ? {} : {
+        auth_user_id: session.user.id,
+        date: todayISO()
+      };
+      if (!partial) payload.auth_user_id = session.user.id;
+      if (data.description != null) payload.description = String(data.description || '').trim();
+      if (data.date != null && isIsoDate(String(data.date))) payload.date = String(data.date);
+      if (data.heure != null) payload.heure = String(data.heure || '').slice(0, 5);
+      if (data.calories != null) payload.calories = intOrNull(String(data.calories));
+      if (data.proteines != null) payload.proteines = numberOrNull(String(data.proteines));
+      if (data.graisses != null) payload.graisses = numberOrNull(String(data.graisses));
+      if (data.glucides != null) payload.glucides = numberOrNull(String(data.glucides));
+      if (data.score != null) payload.score = intOrNull(String(data.score));
+      if (data.notes != null) payload.notes = String(data.notes || '');
+      return payload;
+    }
+
+    function normalizeSleepPayload(data, partial) {
+      var payload = partial ? {} : {
+        auth_user_id: session.user.id,
+        date: todayISO()
+      };
+      if (!partial) payload.auth_user_id = session.user.id;
+      if (data.date != null && isIsoDate(String(data.date))) payload.date = String(data.date);
+      if (data.duree_min != null) payload.duree_min = intOrNull(String(data.duree_min));
+      if (data.qualite != null) payload.qualite = String(data.qualite || '');
+      if (data.score != null) payload.score = intOrNull(String(data.score));
+      return payload;
+    }
+
+    function normalizeActivityPayload(data, partial) {
+      var payload = partial ? {} : {
+        auth_user_id: session.user.id,
+        date: todayISO()
+      };
+      if (!partial) payload.auth_user_id = session.user.id;
+      if (data.type != null) payload.type = String(data.type || '').trim();
+      if (data.date != null && isIsoDate(String(data.date))) payload.date = String(data.date);
+      if (data.duree_min != null) payload.duree_min = intOrNull(String(data.duree_min));
+      if (data.calories != null) payload.calories = intOrNull(String(data.calories));
+      if (data.description != null) payload.description = String(data.description || '');
+      return payload;
+    }
+
+    function isIsoDate(value) {
+      return /^\d{4}-\d{2}-\d{2}$/.test(value);
+    }
   </script>
 </body>
 </html>
