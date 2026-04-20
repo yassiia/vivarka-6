@@ -2147,6 +2147,454 @@
     function escAttr(s) {
       return esc(s).replace(/"/g, '&quot;');
     }
+
+    var editingMealId = null;
+    var editingSleepId = null;
+    var editingActivityId = null;
+    var mealDraft = emptyMealDraft();
+    var sleepDraft = emptySleepDraft();
+    var activityDraft = emptyActivityDraft();
+
+    injectManualCrudStyles();
+
+    function injectManualCrudStyles() {
+      var css = ''
+        + '.bottom-nav{grid-template-columns:repeat(6,minmax(0,1fr));}'
+        + '.manual-card{margin-bottom:16px;}'
+        + '.form-grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));}'
+        + '.light-field,.light-area,.light-select{width:100%;border-radius:16px;border:1px solid var(--border);background:#fff;color:var(--ink);padding:13px 14px;outline:none;}'
+        + '.light-area{min-height:88px;resize:vertical;}'
+        + '.light-field:focus,.light-area:focus,.light-select:focus{border-color:rgba(61,107,94,0.42);box-shadow:0 0 0 3px rgba(61,107,94,0.08);}'
+        + '.span-2{grid-column:span 2;}'
+        + '.action-row,.entry-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}'
+        + '.entry-actions{justify-content:flex-end;}'
+        + '.tiny-btn{border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--ink);padding:9px 11px;font-weight:600;font-size:12px;}'
+        + '.tiny-btn.warn{color:#8f3c32;background:rgba(184,106,96,0.08);border-color:rgba(184,106,96,0.18);}'
+        + '.manual-note{margin-top:10px;font-size:12px;color:var(--mist);}'
+        + '@media (max-width:480px){.form-grid{grid-template-columns:1fr;}.span-2{grid-column:span 1;}}';
+      var style = document.createElement('style');
+      style.textContent = css;
+      document.head.appendChild(style);
+    }
+
+    function renderNavButtons(cls) {
+      var tabs = [
+        { key: 'home', icon: '🏠', label: 'Accueil' },
+        { key: 'nutrition', icon: '🍽️', label: 'Nutrition' },
+        { key: 'sleep', icon: '💤', label: 'Sommeil' },
+        { key: 'activity', icon: '🏋️', label: 'Activité' },
+        { key: 'chat', icon: '🤖', label: 'Coach IA' },
+        { key: 'profile', icon: '⚙️', label: 'Profil' }
+      ];
+      return tabs.map(function(tab) {
+        return '<button class="' + cls + (currentTab === tab.key ? ' active' : '') + '" data-tab="' + tab.key + '">' + tab.icon + '<span>' + tab.label + '</span></button>';
+      }).join('');
+    }
+
+    function bindTabEvents() {
+      if (currentTab === 'home') {
+        var cta = document.getElementById('coachCta');
+        if (cta) cta.onclick = function() { currentTab = 'chat'; renderApp(); };
+      }
+      if (currentTab === 'nutrition') bindMealFormEvents();
+      if (currentTab === 'sleep') bindSleepFormEvents();
+      if (currentTab === 'activity') bindActivityFormEvents();
+      if (currentTab === 'chat') {
+        var input = document.getElementById('chatInput');
+        var send = document.getElementById('sendBtn');
+        if (input) {
+          autoResize(input);
+          input.addEventListener('input', function() { autoResize(input); });
+          input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              sendMessage();
+            }
+          });
+        }
+        if (send) send.onclick = sendMessage;
+        Array.prototype.forEach.call(document.querySelectorAll('[data-suggest]'), function(btn) {
+          btn.onclick = function() {
+            var txt = btn.getAttribute('data-suggest');
+            document.getElementById('chatInput').value = txt;
+            autoResize(document.getElementById('chatInput'));
+            document.getElementById('chatInput').focus();
+          };
+        });
+        var back = document.getElementById('chatBack');
+        if (back) back.onclick = function() { currentTab = 'home'; renderApp(); };
+        scrollChat();
+      }
+      if (currentTab === 'profile') {
+        Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'), function(btn) {
+          btn.onclick = function() { editProfileField(btn.getAttribute('data-edit')); };
+        });
+        var reset = document.getElementById('resetProfileBtn');
+        if (reset) reset.onclick = resetProfile;
+        var logout = document.getElementById('logoutBtn');
+        if (logout) logout.onclick = logout;
+      }
+    }
+
+    function renderCurrentTab() {
+      if (currentTab === 'nutrition') return renderNutrition();
+      if (currentTab === 'sleep') return renderSleep();
+      if (currentTab === 'activity') return renderActivity();
+      if (currentTab === 'chat') return renderChat();
+      if (currentTab === 'profile') return renderProfile();
+      return renderHome();
+    }
+
+    function renderNutrition() {
+      var days = getLastDays(7);
+      var blocks = days.map(function(day) {
+        var dayMeals = mealsForDay(day);
+        if (!dayMeals.length) return '';
+        var dayScore = avg(dayMeals.map(function(x) { return Number(x.score) || 0; }).filter(Boolean));
+        return '<div class="day-card">'
+          + '<div class="day-head"><div><strong>' + esc(formatDayOnly(day)) + '</strong><span>' + esc(day) + '</span></div>'
+          + '<div class="muted">' + sum(dayMeals, 'calories') + ' kcal · ' + round1(sum(dayMeals, 'proteines')) + ' g prot · ' + (dayScore ? Math.round(dayScore) + '/100' : '—') + '</div></div>'
+          + '<div class="meal-list">' + dayMeals.map(function(meal) { return renderMeal(meal, true); }).join('') + '</div>'
+          + '</div>';
+      }).filter(Boolean).join('');
+      return sectionHead('Nutrition', 'Ajoute, corrige ou supprime tes repas sans passer par le chatbot.')
+        + renderMealForm()
+        + (blocks || emptyState('Aucun repas enregistré', 'Utilise le mode manuel ou le Coach IA pour démarrer ton historique nutrition.'));
+    }
+
+    function renderSleep() {
+      var last14 = sleeps.slice().sort(byDateDesc).slice(0, 14).reverse();
+      var avgSleep = last14.length ? avg(last14.map(function(s) { return Number(s.duree_min) || 0; })) / 60 : 0;
+      var best = last14.length ? last14.slice().sort(function(a, b) { return (b.duree_min || 0) - (a.duree_min || 0); })[0] : null;
+      return sectionHead('Sommeil', 'Saisis tes nuits à la main et corrige-les quand tu veux.')
+        + renderSleepForm()
+        + '<section class="quick-grid" style="grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:16px;">'
+        + statBox(avgSleep ? round1(avgSleep) + ' h' : '—', 'Moyenne 14 nuits')
+        + statBox(best ? minutesToHours(best.duree_min) : '—', 'Meilleure nuit')
+        + '</section>'
+        + (last14.length
+          ? '<section class="sleep-card"><h3 class="card-title">Historique</h3><div class="sleep-bars">' + last14.map(renderSleepBar).join('') + '</div></section><div class="meal-list" style="margin-top:16px;">' + sleeps.slice().sort(byDateDesc).map(renderSleepEntry).join('') + '</div>'
+          : emptyState('Aucune nuit enregistrée', 'Ajoute une nuit manuellement ou laisse le Coach IA la journaliser pour toi.'));
+    }
+
+    function renderActivity() {
+      var totalMin = sum(activities, 'duree_min');
+      var totalKcal = sum(activities, 'calories');
+      return sectionHead('Activité', 'Deux modes: dialogue avec le coach ou saisie manuelle complète.')
+        + renderActivityForm()
+        + '<section class="quick-grid" style="grid-template-columns:repeat(3,minmax(0,1fr)); margin-bottom:16px;">'
+        + statBox(activities.length, 'Séances')
+        + statBox(totalMin ? totalMin + ' min' : '—', 'Volume total')
+        + statBox(totalKcal ? totalKcal + ' kcal' : '—', 'Calories activité')
+        + '</section>'
+        + (activities.length
+          ? '<div class="meal-list">' + activities.slice().sort(byDateDesc).map(renderActivityEntry).join('') + '</div>'
+          : emptyState('Aucune séance enregistrée', 'Ajoute une séance ici ou passe par le Coach IA pour alimenter ton historique.'));
+    }
+
+    function renderMealForm() {
+      return '<section class="card manual-card">'
+        + '<h3 class="card-title">' + (editingMealId ? 'Modifier un repas' : 'Ajouter un repas manuellement') + '</h3>'
+        + '<div class="form-grid" style="margin-top:14px;">'
+        + inputField('mealDescription', 'text', 'Description du repas', mealDraft.description)
+        + inputField('mealHeure', 'time', 'Heure', mealDraft.heure)
+        + inputField('mealDate', 'date', 'Date', mealDraft.date)
+        + inputField('mealCalories', 'number', 'Calories', mealDraft.calories)
+        + inputField('mealProteines', 'number', 'Protéines (g)', mealDraft.proteines)
+        + inputField('mealGraisses', 'number', 'Graisses (g)', mealDraft.graisses)
+        + inputField('mealGlucides', 'number', 'Glucides (g)', mealDraft.glucides)
+        + inputField('mealScore', 'number', 'Score /100', mealDraft.score)
+        + '<textarea id="mealNotes" class="light-area span-2" placeholder="Notes, ingrédients, ressenti...">' + esc(mealDraft.notes) + '</textarea>'
+        + '</div>'
+        + '<div class="action-row" style="margin-top:14px;"><button id="mealSaveBtn" class="primary-btn" style="width:auto; margin:0;">' + (editingMealId ? 'Enregistrer les modifications' : 'Ajouter ce repas') + '</button><button id="mealCancelBtn" class="ghost-btn" style="color:var(--ink); border-color:var(--border);">' + (editingMealId ? 'Annuler la modification' : 'Vider le formulaire') + '</button></div>'
+        + '<div class="manual-note">Tu peux ajuster les macros, l’heure, le score et les notes du repas.</div>'
+        + '</section>';
+    }
+
+    function renderSleepForm() {
+      return '<section class="card manual-card">'
+        + '<h3 class="card-title">' + (editingSleepId ? 'Modifier une nuit' : 'Ajouter une nuit manuellement') + '</h3>'
+        + '<div class="form-grid" style="margin-top:14px;">'
+        + inputField('sleepDate', 'date', 'Date', sleepDraft.date)
+        + inputField('sleepDuration', 'number', 'Durée (minutes)', sleepDraft.duree_min)
+        + inputField('sleepScore', 'number', 'Score /100', sleepDraft.score)
+        + '<select id="sleepQualite" class="light-select"><option value="">Qualité</option>' + ['excellente', 'bonne', 'moyenne', 'à améliorer'].map(function(opt) { return '<option value="' + escAttr(opt) + '"' + (sleepDraft.qualite === opt ? ' selected' : '') + '>' + esc(opt) + '</option>'; }).join('') + '</select>'
+        + '</div>'
+        + '<div class="action-row" style="margin-top:14px;"><button id="sleepSaveBtn" class="primary-btn" style="width:auto; margin:0;">' + (editingSleepId ? 'Enregistrer les modifications' : 'Ajouter cette nuit') + '</button><button id="sleepCancelBtn" class="ghost-btn" style="color:var(--ink); border-color:var(--border);">' + (editingSleepId ? 'Annuler la modification' : 'Vider le formulaire') + '</button></div>'
+        + '</section>';
+    }
+
+    function renderActivityForm() {
+      return '<section class="card manual-card">'
+        + '<h3 class="card-title">' + (editingActivityId ? 'Modifier une séance' : 'Ajouter une séance manuellement') + '</h3>'
+        + '<div class="form-grid" style="margin-top:14px;">'
+        + inputField('activityType', 'text', 'Type de séance', activityDraft.type)
+        + inputField('activityDate', 'date', 'Date', activityDraft.date)
+        + inputField('activityDuration', 'number', 'Durée (minutes)', activityDraft.duree_min)
+        + inputField('activityCalories', 'number', 'Calories estimées', activityDraft.calories)
+        + '<textarea id="activityDescription" class="light-area span-2" placeholder="Description, séries, intensité, distance...">' + esc(activityDraft.description) + '</textarea>'
+        + '</div>'
+        + '<div class="action-row" style="margin-top:14px;"><button id="activitySaveBtn" class="primary-btn" style="width:auto; margin:0;">' + (editingActivityId ? 'Enregistrer les modifications' : 'Ajouter cette séance') + '</button><button id="activityCancelBtn" class="ghost-btn" style="color:var(--ink); border-color:var(--border);">' + (editingActivityId ? 'Annuler la modification' : 'Vider le formulaire') + '</button></div>'
+        + '</section>';
+    }
+
+    function bindMealFormEvents() {
+      var save = document.getElementById('mealSaveBtn');
+      var cancel = document.getElementById('mealCancelBtn');
+      if (save) save.onclick = saveMealManual;
+      if (cancel) cancel.onclick = function() { resetMealDraft(); };
+      Array.prototype.forEach.call(document.querySelectorAll('[data-meal-edit]'), function(btn) {
+        btn.onclick = function() { startEditMeal(btn.getAttribute('data-meal-edit')); };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-meal-delete]'), function(btn) {
+        btn.onclick = function() { deleteMeal(btn.getAttribute('data-meal-delete')); };
+      });
+    }
+
+    function bindSleepFormEvents() {
+      var save = document.getElementById('sleepSaveBtn');
+      var cancel = document.getElementById('sleepCancelBtn');
+      if (save) save.onclick = saveSleepManual;
+      if (cancel) cancel.onclick = function() { resetSleepDraft(); };
+      Array.prototype.forEach.call(document.querySelectorAll('[data-sleep-edit]'), function(btn) {
+        btn.onclick = function() { startEditSleep(btn.getAttribute('data-sleep-edit')); };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-sleep-delete]'), function(btn) {
+        btn.onclick = function() { deleteSleep(btn.getAttribute('data-sleep-delete')); };
+      });
+    }
+
+    function bindActivityFormEvents() {
+      var save = document.getElementById('activitySaveBtn');
+      var cancel = document.getElementById('activityCancelBtn');
+      if (save) save.onclick = saveActivityManual;
+      if (cancel) cancel.onclick = function() { resetActivityDraft(); };
+      Array.prototype.forEach.call(document.querySelectorAll('[data-activity-edit]'), function(btn) {
+        btn.onclick = function() { startEditActivity(btn.getAttribute('data-activity-edit')); };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-activity-delete]'), function(btn) {
+        btn.onclick = function() { deleteActivityEntry(btn.getAttribute('data-activity-delete')); };
+      });
+    }
+
+    async function saveMealManual() {
+      var payload = {
+        auth_user_id: session.user.id,
+        description: valueOf('mealDescription'),
+        heure: valueOf('mealHeure'),
+        date: valueOf('mealDate') || todayISO(),
+        calories: numberOrNull(valueOf('mealCalories')),
+        proteines: numberOrNull(valueOf('mealProteines')),
+        graisses: numberOrNull(valueOf('mealGraisses')),
+        glucides: numberOrNull(valueOf('mealGlucides')),
+        score: intOrNull(valueOf('mealScore')),
+        notes: valueOf('mealNotes')
+      };
+      if (!payload.description) return alert('Ajoute au moins une description de repas.');
+      try {
+        if (editingMealId) {
+          await db('meals?id=eq.' + editingMealId + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'PATCH', payload);
+        } else {
+          await db('meals', 'POST', payload);
+        }
+        await loadAllData();
+        resetMealDraft(false);
+        renderApp();
+      } catch (e) {
+        alert(cleanError(e));
+      }
+    }
+
+    async function saveSleepManual() {
+      var payload = {
+        auth_user_id: session.user.id,
+        date: valueOf('sleepDate') || todayISO(),
+        duree_min: intOrNull(valueOf('sleepDuration')),
+        qualite: valueOf('sleepQualite') || null,
+        score: intOrNull(valueOf('sleepScore'))
+      };
+      if (!payload.duree_min) return alert('Ajoute une durée de sommeil en minutes.');
+      try {
+        if (editingSleepId) {
+          await db('sleep?id=eq.' + editingSleepId + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'PATCH', payload);
+        } else {
+          await db('sleep', 'POST', payload);
+        }
+        await loadAllData();
+        resetSleepDraft(false);
+        renderApp();
+      } catch (e) {
+        alert(cleanError(e));
+      }
+    }
+
+    async function saveActivityManual() {
+      var payload = {
+        auth_user_id: session.user.id,
+        type: valueOf('activityType'),
+        date: valueOf('activityDate') || todayISO(),
+        duree_min: intOrNull(valueOf('activityDuration')),
+        calories: intOrNull(valueOf('activityCalories')),
+        description: valueOf('activityDescription')
+      };
+      if (!payload.type) return alert('Ajoute au moins un type de séance.');
+      try {
+        if (editingActivityId) {
+          await db('activity?id=eq.' + editingActivityId + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'PATCH', payload);
+        } else {
+          await db('activity', 'POST', payload);
+        }
+        await loadAllData();
+        resetActivityDraft(false);
+        renderApp();
+      } catch (e) {
+        alert(cleanError(e));
+      }
+    }
+
+    function startEditMeal(id) {
+      var item = meals.find(function(x) { return x.id === id; });
+      if (!item) return;
+      editingMealId = id;
+      mealDraft = {
+        description: item.description || '',
+        heure: item.heure || '',
+        date: item.date || todayISO(),
+        calories: item.calories == null ? '' : item.calories,
+        proteines: item.proteines == null ? '' : item.proteines,
+        graisses: item.graisses == null ? '' : item.graisses,
+        glucides: item.glucides == null ? '' : item.glucides,
+        score: item.score == null ? '' : item.score,
+        notes: item.notes || ''
+      };
+      currentTab = 'nutrition';
+      renderApp();
+    }
+
+    function startEditSleep(id) {
+      var item = sleeps.find(function(x) { return x.id === id; });
+      if (!item) return;
+      editingSleepId = id;
+      sleepDraft = {
+        date: item.date || todayISO(),
+        duree_min: item.duree_min == null ? '' : item.duree_min,
+        qualite: item.qualite || '',
+        score: item.score == null ? '' : item.score
+      };
+      currentTab = 'sleep';
+      renderApp();
+    }
+
+    function startEditActivity(id) {
+      var item = activities.find(function(x) { return x.id === id; });
+      if (!item) return;
+      editingActivityId = id;
+      activityDraft = {
+        type: item.type || '',
+        date: item.date || todayISO(),
+        duree_min: item.duree_min == null ? '' : item.duree_min,
+        calories: item.calories == null ? '' : item.calories,
+        description: item.description || ''
+      };
+      currentTab = 'activity';
+      renderApp();
+    }
+
+    async function deleteMeal(id) {
+      if (!confirm('Supprimer ce repas ?')) return;
+      try {
+        await db('meals?id=eq.' + id + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'DELETE');
+        await loadAllData();
+        if (editingMealId === id) resetMealDraft(false);
+        renderApp();
+      } catch (e) {
+        alert(cleanError(e));
+      }
+    }
+
+    async function deleteSleep(id) {
+      if (!confirm('Supprimer cette nuit ?')) return;
+      try {
+        await db('sleep?id=eq.' + id + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'DELETE');
+        await loadAllData();
+        if (editingSleepId === id) resetSleepDraft(false);
+        renderApp();
+      } catch (e) {
+        alert(cleanError(e));
+      }
+    }
+
+    async function deleteActivityEntry(id) {
+      if (!confirm('Supprimer cette séance ?')) return;
+      try {
+        await db('activity?id=eq.' + id + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'DELETE');
+        await loadAllData();
+        if (editingActivityId === id) resetActivityDraft(false);
+        renderApp();
+      } catch (e) {
+        alert(cleanError(e));
+      }
+    }
+
+    function renderMeal(meal, withActions) {
+      var showActions = withActions === true;
+      return '<div class="meal-item"><div class="meal-main"><strong>🍽️ ' + esc(meal.description || 'Repas') + '</strong><span>' + esc(meal.heure || '—') + ' · ' + esc(String(meal.calories || 0)) + ' kcal · ' + esc(String(round1(meal.proteines || 0))) + ' g prot</span></div><div class="entry-actions"><div class="score-chip" style="background:' + scoreColor(meal.score) + ';">' + esc(String(meal.score || '—')) + '</div>' + (showActions ? '<button class="tiny-btn" data-meal-edit="' + escAttr(meal.id) + '">Modifier</button><button class="tiny-btn warn" data-meal-delete="' + escAttr(meal.id) + '">Supprimer</button>' : '') + '</div></div>';
+    }
+
+    function renderSleepEntry(item) {
+      return '<div class="meal-item"><div class="meal-main"><strong>💤 ' + esc(formatDayOnly(item.date)) + '</strong><span>' + esc(minutesToHours(item.duree_min || 0)) + ' · ' + esc(item.qualite || 'Qualité non précisée') + '</span></div><div class="entry-actions"><div class="score-chip" style="background:' + scoreColor(item.score) + ';">' + esc(String(item.score || '—')) + '</div><button class="tiny-btn" data-sleep-edit="' + escAttr(item.id) + '">Modifier</button><button class="tiny-btn warn" data-sleep-delete="' + escAttr(item.id) + '">Supprimer</button></div></div>';
+    }
+
+    function renderActivityEntry(item) {
+      return '<div class="meal-item"><div class="meal-main"><strong>🏋️ ' + esc(item.type || 'Séance') + '</strong><span>' + esc(item.date || '—') + ' · ' + esc(String(item.duree_min || 0)) + ' min · ' + esc(String(item.calories || 0)) + ' kcal</span></div><div class="entry-actions"><button class="tiny-btn" data-activity-edit="' + escAttr(item.id) + '">Modifier</button><button class="tiny-btn warn" data-activity-delete="' + escAttr(item.id) + '">Supprimer</button></div></div>';
+    }
+
+    function inputField(id, type, placeholder, value) {
+      return '<input id="' + id + '" class="light-field" type="' + type + '" placeholder="' + escAttr(placeholder) + '" value="' + escAttr(value == null ? '' : String(value)) + '">';
+    }
+
+    function valueOf(id) {
+      var el = document.getElementById(id);
+      return el ? el.value.trim() : '';
+    }
+
+    function intOrNull(v) {
+      return v === '' ? null : parseInt(v, 10);
+    }
+
+    function numberOrNull(v) {
+      return v === '' ? null : parseFloat(normalizeNum(v));
+    }
+
+    function emptyMealDraft() {
+      return { description: '', heure: '', date: todayISO(), calories: '', proteines: '', graisses: '', glucides: '', score: '', notes: '' };
+    }
+
+    function emptySleepDraft() {
+      return { date: todayISO(), duree_min: '', qualite: '', score: '' };
+    }
+
+    function emptyActivityDraft() {
+      return { type: '', date: todayISO(), duree_min: '', calories: '', description: '' };
+    }
+
+    function resetMealDraft(shouldRender) {
+      editingMealId = null;
+      mealDraft = emptyMealDraft();
+      if (shouldRender !== false) renderApp();
+    }
+
+    function resetSleepDraft(shouldRender) {
+      editingSleepId = null;
+      sleepDraft = emptySleepDraft();
+      if (shouldRender !== false) renderApp();
+    }
+
+    function resetActivityDraft(shouldRender) {
+      editingActivityId = null;
+      activityDraft = emptyActivityDraft();
+      if (shouldRender !== false) renderApp();
+    }
   </script>
 </body>
 </html>
