@@ -2837,6 +2837,333 @@
     function isIsoDate(value) {
       return /^\d{4}-\d{2}-\d{2}$/.test(value);
     }
+
+    injectPhotoDashboardStyles();
+
+    function injectPhotoDashboardStyles() {
+      var css = ''
+        + '.app-shell{background:#f5f2ec;}'
+        + '.app-header{padding:14px 22px;background:rgba(245,242,236,.96);}'
+        + '.layout{max-width:none;}'
+        + '.content{max-width:none;padding:20px 20px calc(var(--nav-h) + 24px);}'
+        + '.sidebar{padding:14px 10px 20px 12px;gap:10px;}'
+        + '.side-card{padding:10px;border-radius:26px;background:rgba(255,255,255,.62);}'
+        + '.side-card .brand-inline{margin-bottom:4px !important;justify-content:center;}'
+        + '.side-card .muted{display:none;}'
+        + '.side-nav{gap:10px;}'
+        + '.side-btn{display:grid;place-items:center;padding:0;height:42px;border-radius:14px;font-size:0;}'
+        + '.side-btn span{display:none;}'
+        + '.side-btn.active{background:rgba(61,107,94,.12);box-shadow:inset 0 0 0 1px rgba(61,107,94,.08);}'
+        + '.bottom-nav{grid-template-columns:repeat(6,minmax(0,1fr));}'
+        + '.nav-btn{gap:2px;}'
+        + '.home-photo{display:grid;gap:16px;}'
+        + '.home-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;}'
+        + '.home-title{margin:0;font-family:"Fraunces",serif;font-size:34px;font-weight:900;line-height:1.02;letter-spacing:-.03em;}'
+        + '.home-sub{margin-top:6px;color:var(--mist);font-size:14px;}'
+        + '.photo-user-chip{display:inline-flex;align-items:center;gap:10px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.86);border:1px solid var(--border);box-shadow:var(--shadow);}'
+        + '.photo-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--sage),var(--sage2));color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;}'
+        + '.photo-user-copy strong{display:block;font-size:14px;}'
+        + '.photo-user-copy span{display:block;font-size:12px;color:var(--mist);margin-top:2px;}'
+        + '.overview-grid{display:grid;grid-template-columns:220px 1fr;gap:16px;}'
+        + '.score-panel{padding:18px;border-radius:28px;background:#fff;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:space-between;min-height:312px;}'
+        + '.score-main{display:grid;place-items:center;gap:8px;padding:6px 0 10px;}'
+        + '.score-stack{position:relative;width:132px;height:132px;}'
+        + '.score-stack .layer{position:absolute;inset:0;display:grid;place-items:center;}'
+        + '.score-stack .center{position:absolute;inset:0;display:grid;place-items:center;text-align:center;}'
+        + '.score-big{font-family:"Fraunces",serif;font-weight:900;font-size:34px;line-height:1;color:var(--ink);}'
+        + '.score-app-label{font-size:11px;letter-spacing:.14em;color:var(--mist);text-transform:uppercase;margin-top:2px;}'
+        + '.score-links{display:grid;gap:12px;margin-top:10px;}'
+        + '.score-link{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:500;}'
+        + '.score-link em{font-style:normal;display:inline-flex;align-items:center;gap:8px;}'
+        + '.dot-green,.dot-gold,.dot-teal,.dot-red{width:9px;height:9px;border-radius:50%;display:inline-block;}'
+        + '.dot-green{background:var(--sage);} .dot-gold{background:var(--gold);} .dot-teal{background:var(--sage2);} .dot-red{background:var(--blush);}'
+        + '.kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}'
+        + '.kpi-card{background:#fff;border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);padding:18px 20px;min-height:148px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;text-decoration:none;color:inherit;position:relative;}'
+        + '.kpi-card.sleep-critical{background:#fbefef;border-color:rgba(184,106,96,.14);}'
+        + '.kpi-ring{width:52px;height:52px;margin-bottom:12px;position:relative;}'
+        + '.kpi-ring svg{display:block;}'
+        + '.kpi-ring .glyph{position:absolute;inset:0;display:grid;place-items:center;font-size:16px;}'
+        + '.kpi-value{font-family:"Fraunces",serif;font-weight:900;font-size:24px;line-height:1.1;margin:0;}'
+        + '.kpi-label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist);margin-top:4px;}'
+        + '.kpi-sub{font-size:12px;color:var(--mist);margin-top:6px;}'
+        + '.kpi-sub.good{color:var(--sage);} .kpi-sub.warn{color:var(--gold);} .kpi-sub.bad{color:var(--blush);}'
+        + '.stats-photo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}'
+        + '.stats-photo-card{background:#fff;border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);padding:18px 18px 16px;position:relative;color:inherit;text-decoration:none;}'
+        + '.stats-kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mist);font-weight:700;}'
+        + '.stats-arrow{position:absolute;right:14px;top:14px;width:28px;height:28px;border-radius:999px;border:1px solid rgba(61,107,94,.08);background:#f7faf8;color:var(--sage);display:grid;place-items:center;font-size:12px;font-weight:700;}'
+        + '.stats-value{margin-top:14px;font-family:"Fraunces",serif;font-size:30px;font-weight:900;line-height:1;display:flex;align-items:flex-end;gap:4px;}'
+        + '.stats-value small{font-family:"DM Sans",sans-serif;font-size:14px;font-weight:600;color:var(--mist);padding-bottom:4px;}'
+        + '.stats-meta{margin-top:10px;color:var(--mist);font-size:13px;line-height:1.45;}'
+        + '.stats-trend{margin-top:8px;font-size:14px;font-weight:600;}'
+        + '.stats-trend.up{color:var(--sage);} .stats-trend.down{color:var(--gold);} .stats-trend.bad{color:var(--blush);}'
+        + '.alerts-photo{background:#fff;border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);padding:18px;}'
+        + '.alerts-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;}'
+        + '.alerts-title{font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--mist);font-weight:700;}'
+        + '.alerts-badge{padding:6px 10px;border-radius:999px;background:rgba(184,106,96,.08);color:var(--blush);font-size:12px;font-weight:700;}'
+        + '.alert-photo-row{display:flex;align-items:flex-start;gap:12px;padding:14px 14px;border-radius:16px;border:1px solid var(--border);background:#fff;margin-top:10px;}'
+        + '.alert-photo-row.crit{background:#fcf1f1;border-color:rgba(184,106,96,.16);} .alert-photo-row.warn{background:#fbf7ef;border-color:rgba(168,135,58,.14);} .alert-photo-row.ok{background:#f4faf7;border-color:rgba(61,107,94,.12);}'
+        + '.alert-photo-icon{font-size:15px;line-height:1;padding-top:2px;}'
+        + '.alert-photo-copy{font-size:14px;line-height:1.5;flex:1;}'
+        + '.alert-photo-copy strong{font-weight:700;}'
+        + '.alert-photo-copy a{color:var(--sage);font-weight:600;text-decoration:none;}'
+        + '@media (max-width:1100px){.overview-grid{grid-template-columns:1fr;}.stats-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}'
+        + '@media (max-width:768px){.content{padding:16px 14px calc(var(--nav-h) + 24px);} .home-head{flex-direction:column;align-items:flex-start;} .overview-grid{grid-template-columns:1fr;} .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));} .stats-photo-grid{grid-template-columns:1fr;} .app-header{padding:14px 16px;}}'
+        + '@media (max-width:520px){.kpi-grid{grid-template-columns:1fr;} .home-title{font-size:28px;}}';
+      var style = document.createElement('style');
+      style.textContent = css;
+      document.head.appendChild(style);
+    }
+
+    function renderNavButtons(cls) {
+      var tabs = [
+        { key: 'home', icon: '🏠', label: 'Vue Globale' },
+        { key: 'nutrition', icon: '🍽️', label: 'Nutrition' },
+        { key: 'sleep', icon: '💤', label: 'Sommeil' },
+        { key: 'activity', icon: '🏋️', label: 'Activité' },
+        { key: 'chat', icon: '🤖', label: 'Coach IA' },
+        { key: 'profile', icon: '⚙️', label: 'Profil' }
+      ];
+      return tabs.map(function(tab) {
+        return '<button class="' + cls + (currentTab === tab.key ? ' active' : '') + '" data-tab="' + tab.key + '">' + tab.icon + '<span>' + tab.label + '</span></button>';
+      }).join('');
+    }
+
+    function renderApp() {
+      var app = document.getElementById('app');
+      if (!profile) return;
+      var install = deferredPrompt ? '<div class="install-banner"><div><strong>Installer VIVARKA</strong><div class="muted">Ajoute l’app à ton écran d’accueil pour un accès plus direct.</div></div><button id="installBtn">Installer</button></div>' : '';
+      app.innerHTML = ''
+        + '<header class="app-header">'
+        +   '<div class="brand-inline"><div class="app-mark">VK</div><strong>VIVARKA</strong></div>'
+        +   '<div class="user-chip">' + esc(profile.prenom || 'Profil') + ' · ' + formatKg(profile.poids) + '</div>'
+        + '</header>'
+        + '<div class="layout">'
+        +   '<aside class="sidebar">'
+        +     '<div class="side-card"><div class="brand-inline"><div class="app-mark">VK</div></div><nav class="side-nav">' + renderNavButtons('side-btn') + '</nav></div>'
+        +   '</aside>'
+        +   '<main class="content">' + install + renderCurrentTab() + '</main>'
+        + '</div>'
+        + '<nav class="bottom-nav">' + renderNavButtons('nav-btn') + '</nav>';
+      bindAppEvents();
+    }
+
+    function renderCurrentTab() {
+      if (currentTab === 'nutrition') return renderNutrition();
+      if (currentTab === 'sleep') return renderSleep();
+      if (currentTab === 'activity') return renderActivity();
+      if (currentTab === 'chat') return renderChat();
+      if (currentTab === 'profile') return renderProfile();
+      return renderHome();
+    }
+
+    function renderHome() {
+      var today = todayISO();
+      var todayMeals = mealsForDay(today);
+      var weekMeals = lastDaysMeals(8);
+      var latestSleep = sleeps.length ? sleeps.slice().sort(byDateDesc)[0] : null;
+      var todayActs = activities.filter(function(item) { return item.date === today; });
+      var weight = profile && profile.poids ? Number(profile.poids) : null;
+      var goalWeight = profile && profile.objectif_poids ? Number(profile.objectif_poids) : null;
+      var nutritionScore = todayMeals.length ? Math.round(avg(todayMeals.map(function(x) { return Number(x.score) || 0; }).filter(Boolean))) : Math.round(avg(weekMeals.map(function(x) { return Number(x.score) || 0; }).filter(Boolean)) || 0);
+      var sleepScore = latestSleep ? (latestSleep.score || sleepScoreFromDuration(latestSleep.duree_min || 0)) : 0;
+      var actScore = todayActs.length ? 72 : activities.length ? 64 : 30;
+      var globalScore = calcVivarkaPhotoScore(todayMeals, latestSleep, todayActs);
+      var calories = sum(todayMeals, 'calories');
+      var proteins = sum(todayMeals, 'proteines');
+      var steps = sum(todayActs, 'pas');
+      var activeMin = sum(todayActs, 'duree_min');
+      var restHr = firstTruthy(todayActs.map(function(item) { return item.fc_repos; })) || null;
+      var vitality = calcVitalityScore(globalScore, latestSleep, todayActs);
+      var avgKcal = weekMeals.length ? Math.round(sum(weekMeals, 'calories') / uniqueDays(weekMeals, 'date')) : 0;
+      var scoreAvg = weekMeals.length ? Math.round(avg(weekMeals.map(function(x) { return Number(x.score) || 0; }).filter(Boolean)) || 0) : 0;
+      var proteinDays = proteinGoalDays(8);
+      var mealCount = weekMeals.length;
+      var activeAlerts = buildPhotoAlerts({
+        calories: calories,
+        proteins: proteins,
+        sleepMin: latestSleep ? latestSleep.duree_min || 0 : 0
+      });
+      var subtitle = formatPhotoDate(new Date()) + ' · ' + esc((profile && profile.ville) || 'Caen');
+      return ''
+        + '<section class="home-photo">'
+        +   '<div class="home-head"><div><h1 class="home-title">Vue Globale</h1><div class="home-sub">' + subtitle + '</div></div>' + renderPhotoUserChip() + '</div>'
+        +   '<section class="overview-grid">' + renderOverviewScorePanel(globalScore, nutritionScore, actScore, sleepScore)
+        +     '<div class="kpi-grid">'
+        +       renderKpiCard({ key: 'nutrition', icon: '🔥', value: calories ? String(calories) : '—', label: 'Calories', sub: '/' + profileCalorieGoal() + ' ' + (calories >= profileCalorieGoal() * 0.8 ? '✅' : ''), progress: pct(calories, profileCalorieGoal()), color: calories >= profileCalorieGoal() ? '#3D6B5E' : '#B86A60' })
+        +       renderKpiCard({ key: 'activity', icon: '👣', value: steps ? String(steps) : '0', label: 'Pas', sub: '/' + activityStepsGoal() + ' ' + (steps >= activityStepsGoal() ? '✅' : ''), progress: pct(steps, activityStepsGoal()), color: '#A8873A' })
+        +       renderKpiCard({ key: 'activity', icon: '⏱', value: activeMin ? activeMin + ' min' : '0 min', label: 'Actifs', sub: '/' + activityMinutesGoal() + ' ' + (activeMin >= activityMinutesGoal() ? '✅' : ''), progress: pct(activeMin, activityMinutesGoal()), color: '#3D6B5E' })
+        +       renderKpiCard({ key: 'activity', icon: '⚡', value: vitality ? String(vitality) : '—', label: 'Vitalité', sub: '7 jours', progress: vitality, color: '#3D6B5E' })
+        +       renderKpiCard({ key: 'activity', icon: '💗', value: restHr ? restHr + ' bpm' : '—', label: 'FC repos', sub: latestTimeForHr() || '—', progress: restHr ? Math.max(20, 100 - Math.min(restHr, 120)) : 24, color: '#B86A60' })
+        +       renderKpiCard({ key: 'sleep', icon: '😴', value: latestSleep ? minutesToHours(latestSleep.duree_min || 0) : '—', label: 'Sommeil', sub: sleepBadgeText(latestSleep), progress: sleepScore, color: latestSleep && latestSleep.duree_min < 360 ? '#B86A60' : '#3D6B5E', critical: !!(latestSleep && latestSleep.duree_min < 360) })
+        +     '</div>'
+        +   '</section>'
+        +   '<section class="stats-photo-grid">'
+        +     renderPhotoStatCard({ title: 'Score Nutrition', value: scoreAvg || 0, unit: '/100', meta: 'Moy. 8j · ' + mealCount + ' repas', trend: scoreAvg ? '+14 pts vs J1' : 'À construire', trendClass: 'up', targetTab: 'nutrition' })
+        +     renderPhotoStatCard({ title: 'Poids', value: weight != null ? round1(weight) : '—', unit: 'kg', meta: 'Objectif ' + (goalWeight != null ? round1(goalWeight) + ' kg' : '—'), trend: weight != null && goalWeight != null ? (weight > goalWeight ? '↓ -' + round1(weight - goalWeight) + ' kg vs objectif' : 'Objectif atteint') : 'Renseigne ton objectif', trendClass: weight != null && goalWeight != null && weight <= goalWeight ? 'up' : 'down', targetTab: 'profile' })
+        +     renderPhotoStatCard({ title: 'Protéines', value: proteins ? round1(proteins) : 0, unit: 'g', meta: 'Objectif 130–150g/j', trend: proteinDays + '/8 jours atteint', trendClass: proteinDays >= 4 ? 'up' : 'down', targetTab: 'nutrition' })
+        +     renderPhotoStatCard({ title: 'Calories moy.', value: avgKcal || 0, unit: 'kcal', meta: 'Objectif ' + profileCalorieGoal() + ' kcal/j', trend: avgKcal >= profileCalorieGoal() ? 'Dans la cible' : '↓ légèrement sous', trendClass: avgKcal >= profileCalorieGoal() * 0.95 ? 'up' : 'down', targetTab: 'nutrition' })
+        +   '</section>'
+        +   '<section class="alerts-photo"><div class="alerts-head"><div class="alerts-title">Alertes du jour</div><div class="alerts-badge">' + activeAlerts.length + ' active' + (activeAlerts.length > 1 ? 's' : '') + '</div></div>' + activeAlerts.map(renderPhotoAlert).join('') + '</section>'
+        + '</section>';
+    }
+
+    function renderProfile() {
+      var stats = { meals: meals.length, sleeps: sleeps.length, activities: activities.length };
+      var fields = [
+        ['prenom', 'Prénom', profile.prenom || '—'],
+        ['age', 'Âge', profile.age || '—'],
+        ['poids', 'Poids', formatKg(profile.poids)],
+        ['objectif_poids', 'Objectif poids', formatKg(profile.objectif_poids)],
+        ['objectifs', 'Objectifs', profile.objectifs || '—'],
+        ['sport', 'Sport', profile.sport || '—'],
+        ['ton_coach', 'Ton coach', profile.ton_coach || 'Bienveillant']
+      ];
+      return sectionHead('Profil', 'Compte, préférences et statistiques personnelles.')
+        + '<section class="card" style="margin-bottom:16px;"><h3 class="card-title">Mon compte</h3><div class="profile-list" style="margin-top:14px;"><div class="profile-line"><div><strong>Email</strong><span>' + esc((session && session.user && session.user.email) || '') + '</span></div><button id="logoutBtn">Se déconnecter</button></div></div></section>'
+        + '<section class="card" style="margin-bottom:16px;"><h3 class="card-title">Mon profil</h3><div class="profile-list" style="margin-top:14px;">'
+        + fields.map(function(field) { return '<div class="profile-line"><div><strong>' + esc(field[1]) + '</strong><span>' + esc(String(field[2])) + '</span></div><button data-edit="' + field[0] + '">✎</button></div>'; }).join('')
+        + '</div></section>'
+        + '<section class="quick-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));">' + statBox(stats.meals, 'Repas enregistrés') + statBox(stats.sleeps, 'Nuits enregistrées') + statBox(stats.activities, 'Séances sport') + '</section>'
+        + '<button id="resetProfileBtn" class="reset-btn">Réinitialiser le profil</button>';
+    }
+
+    function renderActivity() {
+      var totalMin = sum(activities, 'duree_min');
+      var totalKcal = sum(activities, 'calories');
+      var totalSteps = sum(activities, 'pas');
+      var restHr = firstTruthy(activities.map(function(item) { return item.fc_repos; })) || null;
+      return sectionHead('Activité', 'Stats du jour, progression et historique de tes séances.')
+        + '<section class="quick-grid" style="grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:16px;">' + statBox(totalSteps || '—', 'Pas') + statBox(totalMin ? totalMin + ' min' : '—', 'Minutes actives') + statBox(totalKcal ? totalKcal + ' kcal' : '—', 'Calories brûlées') + statBox(restHr ? restHr + ' bpm' : '—', 'FC repos') + '</section>'
+        + renderActivityForm()
+        + (activities.length ? '<div class="meal-list">' + activities.slice().sort(byDateDesc).map(renderActivityEntry).join('') + '</div>' : emptyState('Aucune séance enregistrée', 'Ajoute une séance manuellement ou demande au Coach IA de la journaliser.'));
+    }
+
+    function renderOverviewScorePanel(score, nutritionScore, actScore, sleepScore) {
+      return '<div class="score-panel"><div class="score-main"><div class="score-stack"><div class="layer">' + mkMiniArc(Math.max(score - 10, 8), 132, 12, '#26d7be', 0.82) + '</div><div class="layer">' + mkMiniArc(Math.max(nutritionScore, 8), 112, 10, '#ffcb22', 0.9) + '</div><div class="layer">' + mkMiniArc(Math.max(actScore, 8), 90, 8, '#2b8bff', 0.9) + '</div><div class="center"><div><div class="score-big">' + (score || '—') + '</div><div class="score-app-label">PHOS</div></div></div></div></div><div class="score-links">' + renderScoreLink('nutrition', 'dot-green', 'Nutrition', nutritionScore) + renderScoreLink('activity', 'dot-gold', 'Activité', actScore) + renderScoreLink('sleep', 'dot-teal', 'Sommeil', (sleepScore || 0) + '%') + '</div></div>';
+    }
+
+    function renderScoreLink(tab, dotCls, label, value) {
+      return '<a href="#" class="score-link" data-tab-jump="' + tab + '"><em><span class="' + dotCls + '"></span>' + esc(label) + '</em><strong>' + esc(String(value)) + ' ›</strong></a>';
+    }
+
+    function renderPhotoUserChip() {
+      var initials = initialsOf(profile.prenom || 'VK');
+      var meta = [formatKg(profile.poids), profile.taille ? profile.taille + ' cm' : null].filter(Boolean).join(' · ');
+      return '<div class="photo-user-chip"><div class="photo-avatar">' + esc(initials) + '</div><div class="photo-user-copy"><strong>' + esc(profile.prenom || 'Profil') + '</strong><span>' + esc(meta || 'Profil VIVARKA')</span></div></div>';
+    }
+
+    function renderKpiCard(cfg) {
+      return '<a href="#" class="kpi-card' + (cfg.critical ? ' sleep-critical' : '') + '" data-tab-jump="' + escAttr(cfg.key) + '"><div class="kpi-ring">' + mkRingIcon(cfg.progress || 0, cfg.color || '#3D6B5E', cfg.icon) + '</div><div class="kpi-value">' + esc(String(cfg.value)) + '</div><div class="kpi-label">' + esc(cfg.label) + '</div><div class="kpi-sub' + (cfg.critical ? ' bad' : (String(cfg.sub).indexOf('✅') !== -1 ? ' good' : (String(cfg.sub).indexOf('Critique') !== -1 ? ' bad' : ' warn'))) + '">' + esc(cfg.sub || '') + '</div></a>';
+    }
+
+    function renderPhotoStatCard(cfg) {
+      return '<a href="#" class="stats-photo-card" data-tab-jump="' + escAttr(cfg.targetTab || 'home') + '"><div class="stats-kicker">' + esc(cfg.title) + '</div><div class="stats-arrow">→</div><div class="stats-value">' + esc(String(cfg.value)) + (cfg.unit ? '<small>' + esc(cfg.unit) + '</small>' : '') + '</div><div class="stats-meta">' + esc(cfg.meta || '') + '</div><div class="stats-trend ' + escAttr(cfg.trendClass || 'up') + '">' + esc(cfg.trend || '') + '</div></a>';
+    }
+
+    function renderPhotoAlert(item) {
+      return '<div class="alert-photo-row ' + escAttr(item.cls) + '"><div class="alert-photo-icon">' + esc(item.icon) + '</div><div class="alert-photo-copy"><strong>' + esc(item.title) + '</strong> ' + esc(item.text) + ' <a href="#" data-tab-jump="' + escAttr(item.tab) + '">' + esc(item.linkLabel) + ' ›</a></div></div>';
+    }
+
+    function buildPhotoAlerts(ctx) {
+      var list = [];
+      if (ctx.sleepMin && ctx.sleepMin < 360) list.push({ cls: 'crit', icon: '🫀', title: 'Sommeil critique — ' + minutesToHours(ctx.sleepMin) + '.', text: 'Cortisol élevé, synthèse musculaire réduite. Coucher avant 23h ce soir.', tab: 'sleep', linkLabel: 'Voir sommeil' });
+      if (ctx.calories < profileCalorieGoal() && ctx.calories > 0) list.push({ cls: 'warn', icon: '⚠️', title: 'Calories légèrement sous.', text: ctx.calories + ' vs ' + profileCalorieGoal() + '. Ajouter une collation ce soir.', tab: 'nutrition', linkLabel: 'Nutrition' });
+      if (ctx.proteins >= 130) list.push({ cls: 'ok', icon: '✅', title: 'Protéines objectif atteint.', text: Math.round(ctx.proteins) + ' g. Récupération musculaire assurée.', tab: 'activity', linkLabel: 'Activité' });
+      else if (ctx.proteins > 0) list.push({ cls: 'warn', icon: '💪', title: 'Protéines encore sous la cible.', text: Math.round(ctx.proteins) + ' g pour le moment, vise 130 g.', tab: 'nutrition', linkLabel: 'Nutrition' });
+      if (!list.length) list.push({ cls: 'ok', icon: '✅', title: 'Alerte majeure absente.', text: 'Continue à logger tes repas, ton sommeil et ton activité pour garder ce tableau précis.', tab: 'chat', linkLabel: 'Coach IA' });
+      return list.slice(0, 3);
+    }
+
+    function bindAppEvents() {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-tab]'), function(btn) {
+        btn.onclick = function() {
+          currentTab = btn.getAttribute('data-tab');
+          renderApp();
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-tab-jump]'), function(btn) {
+        btn.onclick = function(e) {
+          e.preventDefault();
+          currentTab = btn.getAttribute('data-tab-jump');
+          renderApp();
+        };
+      });
+      var installBtn = document.getElementById('installBtn');
+      if (installBtn) installBtn.onclick = installApp;
+      bindTabEvents();
+    }
+
+    function calcVivarkaPhotoScore(dayMeals, sleepLast, actsToday) {
+      var nutritionScore = dayMeals.length ? Math.round(avg(dayMeals.map(function(item) { return Number(item.score) || 0; }).filter(Boolean)) || 0) : 0;
+      var sleepScore = sleepLast ? (sleepLast.score || sleepScoreFromDuration(sleepLast.duree_min || 0)) : 0;
+      var actScore = actsToday.length ? 75 : 50;
+      return Math.round(nutritionScore * 0.5 + sleepScore * 0.3 + actScore * 0.2);
+    }
+
+    function mkMiniArc(score, size, stroke, color, opacity) {
+      var r = (size - stroke) / 2;
+      var circ = 2 * Math.PI * r;
+      var arc = Math.max(8, (Math.max(0, Math.min(100, score)) / 100) * circ);
+      return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" style="transform:rotate(-90deg)"><circle cx="' + (size / 2) + '" cy="' + (size / 2) + '" r="' + r + '" fill="none" stroke="rgba(61,107,94,.08)" stroke-width="' + stroke + '"></circle><circle cx="' + (size / 2) + '" cy="' + (size / 2) + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + stroke + '" stroke-linecap="round" stroke-opacity="' + (opacity || 1) + '" stroke-dasharray="' + arc + ' ' + circ + '"></circle></svg>';
+    }
+
+    function mkRingIcon(score, color, icon) {
+      var size = 52;
+      var stroke = 5;
+      var r = (size - stroke) / 2;
+      var circ = 2 * Math.PI * r;
+      var arc = Math.max(4, (Math.max(0, Math.min(100, score)) / 100) * circ);
+      return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" style="transform:rotate(-90deg)"><circle cx="' + (size / 2) + '" cy="' + (size / 2) + '" r="' + r + '" fill="none" stroke="rgba(61,107,94,.08)" stroke-width="' + stroke + '"></circle><circle cx="' + (size / 2) + '" cy="' + (size / 2) + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + stroke + '" stroke-linecap="round" stroke-dasharray="' + arc + ' ' + circ + '"></circle></svg><div class="glyph">' + esc(icon) + '</div>';
+    }
+
+    function pct(value, goal) {
+      if (!goal) return 0;
+      return Math.max(0, Math.min(100, Math.round((Number(value || 0) / goal) * 100)));
+    }
+
+    function profileCalorieGoal() { return 2000; }
+    function activityStepsGoal() { return 6000; }
+    function activityMinutesGoal() { return 30; }
+
+    function calcVitalityScore(globalScore, sleepLast, actsToday) {
+      var base = globalScore || 0;
+      if (sleepLast && sleepLast.duree_min < 360) base -= 12;
+      if (actsToday.length) base += 6;
+      return Math.max(0, Math.min(100, base));
+    }
+
+    function proteinGoalDays(days) {
+      var bucket = {};
+      meals.forEach(function(item) {
+        if (getLastDays(days).indexOf(item.date) !== -1) bucket[item.date] = (bucket[item.date] || 0) + Number(item.proteines || 0);
+      });
+      return Object.keys(bucket).filter(function(day) { return bucket[day] >= 130; }).length;
+    }
+
+    function formatPhotoDate(d) {
+      return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
+    }
+
+    function initialsOf(name) {
+      return String(name || 'VK').trim().split(/\s+/).slice(0, 2).map(function(part) { return part.charAt(0).toUpperCase(); }).join('');
+    }
+
+    function firstTruthy(arr) {
+      for (var i = 0; i < arr.length; i++) if (arr[i] || arr[i] === 0) return arr[i];
+      return null;
+    }
+
+    function sleepBadgeText(item) {
+      if (!item) return 'Aucune nuit';
+      if ((item.duree_min || 0) < 360) return '⚠️ Critique';
+      if ((item.duree_min || 0) < 420) return 'À surveiller';
+      return '✅ Stable';
+    }
+
+    function latestTimeForHr() {
+      var recent = activities.slice().sort(byDateDesc)[0];
+      return recent && recent.created_at ? new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date(recent.created_at)) : '';
+    }
   </script>
 </body>
 </html>
