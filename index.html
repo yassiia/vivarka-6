@@ -3049,7 +3049,7 @@
     function renderPhotoUserChip() {
       var initials = initialsOf(profile.prenom || 'VK');
       var meta = [formatKg(profile.poids), profile.taille ? profile.taille + ' cm' : null].filter(Boolean).join(' · ');
-      return '<div class="photo-user-chip"><div class="photo-avatar">' + esc(initials) + '</div><div class="photo-user-copy"><strong>' + esc(profile.prenom || 'Profil') + '</strong><span>' + esc(meta || 'Profil VIVARKA')</span></div></div>';
+      return '<div class="photo-user-chip"><div class="photo-avatar">' + esc(initials) + '</div><div class="photo-user-copy"><strong>' + esc(profile.prenom || 'Profil') + '</strong><span>' + esc(meta || 'Profil VIVARKA') + '</span></div></div>';
     }
 
     function renderKpiCard(cfg) {
