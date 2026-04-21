@@ -3164,6 +3164,380 @@
       var recent = activities.slice().sort(byDateDesc)[0];
       return recent && recent.created_at ? new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date(recent.created_at)) : '';
     }
+
+    /* ================================================================
+       PATCH: DRILL-DOWN NAVIGATION + CHAMP INGRÉDIENTS
+       Override des fonctions grâce au hoisting JS
+       (dernière déclaration gagne)
+       ================================================================ */
+
+    var viewStack = [];
+    var activeView = null;
+    var activeViewData = null;
+
+    function drill(view, data) {
+      viewStack.push({ isTab: !activeView, view: activeView || currentTab, data: activeView ? activeViewData : null });
+      activeView = view;
+      activeViewData = data;
+      renderApp();
+      window.scrollTo(0, 0);
+    }
+
+    function backView() {
+      if (!viewStack.length) {
+        activeView = null;
+        activeViewData = null;
+        renderApp();
+        return;
+      }
+      var prev = viewStack.pop();
+      if (prev.isTab) {
+        activeView = null;
+        activeViewData = null;
+        currentTab = prev.view;
+      } else {
+        activeView = prev.view;
+        activeViewData = prev.data;
+      }
+      renderApp();
+      window.scrollTo(0, 0);
+    }
+
+    function resetDrill() {
+      viewStack = [];
+      activeView = null;
+      activeViewData = null;
+    }
+
+    /* ---------- Dispatcher override ---------- */
+    function renderCurrentTab() {
+      if (activeView === 'meal_detail') return renderMealDetail(activeViewData);
+      if (activeView === 'sleep_detail') return renderSleepDetail(activeViewData);
+      if (activeView === 'activity_detail') return renderActivityDetail(activeViewData);
+      if (activeView === 'day_detail') return renderDayDetail(activeViewData);
+      if (currentTab === 'nutrition') return renderNutrition();
+      if (currentTab === 'sleep') return renderSleep();
+      if (currentTab === 'activity') return renderActivity();
+      if (currentTab === 'chat') return renderChat();
+      if (currentTab === 'profile') return renderProfile();
+      return renderHome();
+    }
+
+    /* ---------- Meal row clickable ---------- */
+    function renderMeal(meal, withActions) {
+      var showActions = withActions === true;
+      var actionsHtml = showActions
+        ? '<button class="tiny-btn" data-meal-edit="' + escAttr(meal.id) + '">Modifier</button><button class="tiny-btn warn" data-meal-delete="' + escAttr(meal.id) + '">Supprimer</button>'
+        : '';
+      return '<div class="meal-item clickable-row" data-meal-drill="' + escAttr(meal.id) + '">'
+        +   '<div class="meal-main"><strong>🍽️ ' + esc(meal.description || 'Repas') + '</strong>'
+        +     '<span>' + esc(meal.heure || '—') + ' · ' + esc(String(meal.calories || 0)) + ' kcal · ' + esc(String(round1(meal.proteines || 0))) + ' g prot</span></div>'
+        +   '<div class="entry-actions">'
+        +     '<div class="score-chip" style="background:' + scoreColor(meal.score) + ';">' + esc(String(meal.score || '—')) + '</div>'
+        +     actionsHtml
+        +     '<span class="chev">›</span>'
+        +   '</div>'
+        + '</div>';
+    }
+
+    /* ---------- Sleep row clickable ---------- */
+    function renderSleepEntry(item) {
+      return '<div class="meal-item clickable-row" data-sleep-drill="' + escAttr(item.id) + '">'
+        +   '<div class="meal-main"><strong>💤 ' + esc(formatDayOnly(item.date)) + '</strong>'
+        +     '<span>' + esc(minutesToHours(item.duree_min || 0)) + ' · ' + esc(item.qualite || 'Qualité non précisée') + '</span></div>'
+        +   '<div class="entry-actions">'
+        +     '<div class="score-chip" style="background:' + scoreColor(item.score) + ';">' + esc(String(item.score || '—')) + '</div>'
+        +     '<button class="tiny-btn" data-sleep-edit="' + escAttr(item.id) + '">Modifier</button>'
+        +     '<button class="tiny-btn warn" data-sleep-delete="' + escAttr(item.id) + '">Supprimer</button>'
+        +     '<span class="chev">›</span>'
+        +   '</div>'
+        + '</div>';
+    }
+
+    /* ---------- Activity row clickable ---------- */
+    function renderActivityEntry(item) {
+      return '<div class="meal-item clickable-row" data-activity-drill="' + escAttr(item.id) + '">'
+        +   '<div class="meal-main"><strong>🏋️ ' + esc(item.type || 'Séance') + '</strong>'
+        +     '<span>' + esc(item.date || '—') + ' · ' + esc(String(item.duree_min || 0)) + ' min · ' + esc(String(item.calories || 0)) + ' kcal</span></div>'
+        +   '<div class="entry-actions">'
+        +     '<button class="tiny-btn" data-activity-edit="' + escAttr(item.id) + '">Modifier</button>'
+        +     '<button class="tiny-btn warn" data-activity-delete="' + escAttr(item.id) + '">Supprimer</button>'
+        +     '<span class="chev">›</span>'
+        +   '</div>'
+        + '</div>';
+    }
+
+    /* ---------- DETAIL VIEWS ---------- */
+    function detailHead(title, sub) {
+      return '<section class="detail-head"><button id="drillBack" class="back-btn" type="button">← Retour</button>'
+        +     '<div><h1 class="section-title" style="margin:0;">' + esc(title) + '</h1>'
+        +     '<div class="section-sub">' + esc(sub || '') + '</div></div></section>';
+    }
+
+    function renderMealDetail(id) {
+      var meal = meals.find(function(x) { return String(x.id) === String(id); });
+      if (!meal) return detailHead('Repas introuvable', '') + emptyState('Ce repas a été supprimé.', 'Reviens à la liste pour voir les autres.');
+      var ingredients = (meal.ingredients || '').split(/\r?\n/).filter(function(s) { return s.trim(); });
+      var ingRows = ingredients.length
+        ? '<div class="card" style="margin-top:14px;"><h3 class="card-title">Ingrédients</h3><div class="ing-list" style="margin-top:10px;">'
+          + ingredients.map(function(line) {
+              return '<div class="ing-row"><span class="ing-name">' + esc(line.trim()) + '</span></div>';
+            }).join('')
+          + '</div></div>'
+        : '<div class="card" style="margin-top:14px;"><h3 class="card-title">Ingrédients</h3><div class="muted" style="margin-top:8px;">Aucun ingrédient renseigné. Utilise le bouton Modifier pour en ajouter.</div></div>';
+      var notes = meal.notes ? '<div class="card" style="margin-top:14px;"><h3 class="card-title">Notes</h3><div style="margin-top:8px; white-space:pre-wrap;">' + esc(meal.notes) + '</div></div>' : '';
+      return detailHead(meal.description || 'Repas', formatDayOnly(meal.date) + ' · ' + (meal.heure || '—'))
+        + '<section class="quick-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));">'
+        +   statBox((meal.calories || 0) + ' kcal', 'Calories')
+        +   statBox(round1(meal.proteines || 0) + ' g', 'Protéines')
+        +   statBox(round1(meal.glucides || 0) + ' g', 'Glucides')
+        +   statBox(round1(meal.graisses || 0) + ' g', 'Graisses')
+        + '</section>'
+        + '<div class="card" style="margin-top:14px;">'
+        +   '<h3 class="card-title">Score nutritionnel</h3>'
+        +   '<div style="display:flex;align-items:center;gap:16px;margin-top:10px;">'
+        +   scoreRing(meal.score)
+        +   '<div><div style="font-size:14px;color:var(--mist);">' + scoreBadge(meal.score) + '</div></div>'
+        +   '</div>'
+        + '</div>'
+        + ingRows
+        + notes
+        + '<div class="action-row" style="margin-top:16px;">'
+        +   '<button class="primary-btn" style="width:auto;margin:0;" data-meal-edit="' + escAttr(meal.id) + '">Modifier ce repas</button>'
+        +   '<button class="tiny-btn warn" data-meal-delete="' + escAttr(meal.id) + '">Supprimer</button>'
+        + '</div>';
+    }
+
+    function renderSleepDetail(id) {
+      var item = sleeps.find(function(x) { return String(x.id) === String(id); });
+      if (!item) return detailHead('Nuit introuvable', '') + emptyState('Cette nuit a été supprimée.', 'Reviens à la liste pour voir les autres nuits.');
+      var h = (item.duree_min || 0) / 60;
+      return detailHead(formatDayOnly(item.date), 'Nuit du ' + item.date)
+        + '<section class="quick-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));">'
+        +   statBox(minutesToHours(item.duree_min || 0), 'Durée')
+        +   statBox(item.qualite || '—', 'Qualité ressentie')
+        +   statBox((item.score || 0) + '/100', 'Score')
+        + '</section>'
+        + '<div class="card" style="margin-top:14px;">'
+        +   '<h3 class="card-title">Interprétation</h3>'
+        +   '<div style="margin-top:8px;">' + esc(h >= 7.5 ? 'Excellente durée de sommeil.' : h >= 6.5 ? 'Durée correcte, vise 7h30 idéalement.' : h >= 5.5 ? 'Sommeil insuffisant, impact sur la récupération.' : 'Sommeil très insuffisant, priorité absolue.') + '</div>'
+        + '</div>'
+        + '<div class="action-row" style="margin-top:16px;">'
+        +   '<button class="primary-btn" style="width:auto;margin:0;" data-sleep-edit="' + escAttr(item.id) + '">Modifier</button>'
+        +   '<button class="tiny-btn warn" data-sleep-delete="' + escAttr(item.id) + '">Supprimer</button>'
+        + '</div>';
+    }
+
+    function renderActivityDetail(id) {
+      var item = activities.find(function(x) { return String(x.id) === String(id); });
+      if (!item) return detailHead('Séance introuvable', '') + emptyState('Cette séance a été supprimée.', 'Reviens à la liste pour voir les autres séances.');
+      return detailHead(item.type || 'Séance', (item.date || '—'))
+        + '<section class="quick-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));">'
+        +   statBox((item.duree_min || 0) + ' min', 'Durée')
+        +   statBox((item.calories || 0) + ' kcal', 'Calories')
+        +   statBox(item.pas ? item.pas : '—', 'Pas')
+        + '</section>'
+        + (item.description ? '<div class="card" style="margin-top:14px;"><h3 class="card-title">Description</h3><div style="margin-top:8px;white-space:pre-wrap;">' + esc(item.description) + '</div></div>' : '')
+        + '<div class="action-row" style="margin-top:16px;">'
+        +   '<button class="primary-btn" style="width:auto;margin:0;" data-activity-edit="' + escAttr(item.id) + '">Modifier</button>'
+        +   '<button class="tiny-btn warn" data-activity-delete="' + escAttr(item.id) + '">Supprimer</button>'
+        + '</div>';
+    }
+
+    function renderDayDetail(date) {
+      var dayMeals = mealsForDay(date);
+      var totalCal = sum(dayMeals, 'calories');
+      var totalProt = round1(sum(dayMeals, 'proteines'));
+      var dayScore = dayMeals.length ? Math.round(avg(dayMeals.map(function(x) { return Number(x.score) || 0; }).filter(Boolean)) || 0) : 0;
+      return detailHead(formatDayOnly(date), date + ' · ' + dayMeals.length + ' repas')
+        + '<section class="quick-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));">'
+        +   statBox(totalCal + ' kcal', 'Calories totales')
+        +   statBox(totalProt + ' g', 'Protéines')
+        +   statBox(dayScore + '/100', 'Score moyen')
+        + '</section>'
+        + (dayMeals.length
+          ? '<div class="meal-list" style="margin-top:14px;">' + dayMeals.map(function(m) { return renderMeal(m, true); }).join('') + '</div>'
+          : emptyState('Aucun repas ce jour', 'Ajoute-en depuis l\'onglet Nutrition.'));
+    }
+
+    /* ---------- Form: ajouter champ ingrédients ---------- */
+    function emptyMealDraft() {
+      return { description: '', heure: '', date: todayISO(), calories: '', proteines: '', graisses: '', glucides: '', score: '', ingredients: '', notes: '' };
+    }
+
+    function renderMealForm() {
+      return '<section class="card manual-card">'
+        + '<h3 class="card-title">' + (editingMealId ? 'Modifier un repas' : 'Ajouter un repas manuellement') + '</h3>'
+        + '<div class="form-grid" style="margin-top:14px;">'
+        + inputField('mealDescription', 'text', 'Description du repas', mealDraft.description)
+        + inputField('mealHeure', 'time', 'Heure', mealDraft.heure)
+        + inputField('mealDate', 'date', 'Date', mealDraft.date)
+        + inputField('mealCalories', 'number', 'Calories', mealDraft.calories)
+        + inputField('mealProteines', 'number', 'Protéines (g)', mealDraft.proteines)
+        + inputField('mealGraisses', 'number', 'Graisses (g)', mealDraft.graisses)
+        + inputField('mealGlucides', 'number', 'Glucides (g)', mealDraft.glucides)
+        + inputField('mealScore', 'number', 'Score /100', mealDraft.score)
+        + '<textarea id="mealIngredients" class="light-area span-2" placeholder="Ingrédients (un par ligne) — ex:\n100g riz complet\n150g poulet\n1 c. huile olive">' + esc(mealDraft.ingredients || '') + '</textarea>'
+        + '<textarea id="mealNotes" class="light-area span-2" placeholder="Notes, ressenti, contexte...">' + esc(mealDraft.notes) + '</textarea>'
+        + '</div>'
+        + '<div class="action-row" style="margin-top:14px;"><button id="mealSaveBtn" class="primary-btn" style="width:auto; margin:0;">' + (editingMealId ? 'Enregistrer les modifications' : 'Ajouter ce repas') + '</button><button id="mealCancelBtn" class="ghost-btn" style="color:var(--ink); border-color:var(--border);">' + (editingMealId ? 'Annuler la modification' : 'Vider le formulaire') + '</button></div>'
+        + '<div class="manual-note">Liste les ingrédients ligne par ligne pour les retrouver dans le détail du repas.</div>'
+        + '</section>';
+    }
+
+    async function saveMealManual() {
+      var payload = {
+        auth_user_id: session.user.id,
+        description: valueOf('mealDescription'),
+        heure: valueOf('mealHeure'),
+        date: valueOf('mealDate') || todayISO(),
+        calories: numberOrNull(valueOf('mealCalories')),
+        proteines: numberOrNull(valueOf('mealProteines')),
+        graisses: numberOrNull(valueOf('mealGraisses')),
+        glucides: numberOrNull(valueOf('mealGlucides')),
+        score: intOrNull(valueOf('mealScore')),
+        ingredients: valueOf('mealIngredients'),
+        notes: valueOf('mealNotes')
+      };
+      if (!payload.description) return alert('Ajoute au moins une description de repas.');
+      try {
+        if (editingMealId) {
+          await db('meals?id=eq.' + editingMealId + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'PATCH', payload);
+        } else {
+          await db('meals', 'POST', payload);
+        }
+        await loadAllData();
+        resetMealDraft(false);
+        resetDrill();
+        renderApp();
+      } catch (e) {
+        alert(cleanError(e));
+      }
+    }
+
+    function startEditMeal(id) {
+      var item = meals.find(function(x) { return String(x.id) === String(id); });
+      if (!item) return;
+      editingMealId = id;
+      mealDraft = {
+        description: item.description || '',
+        heure: item.heure || '',
+        date: item.date || todayISO(),
+        calories: item.calories == null ? '' : item.calories,
+        proteines: item.proteines == null ? '' : item.proteines,
+        graisses: item.graisses == null ? '' : item.graisses,
+        glucides: item.glucides == null ? '' : item.glucides,
+        score: item.score == null ? '' : item.score,
+        ingredients: item.ingredients || '',
+        notes: item.notes || ''
+      };
+      resetDrill();
+      currentTab = 'nutrition';
+      renderApp();
+    }
+
+    function normalizeMealPayload(data, partial) {
+      var payload = partial ? {} : {
+        auth_user_id: session.user.id,
+        date: todayISO()
+      };
+      if (!partial) payload.auth_user_id = session.user.id;
+      if (data.description != null) payload.description = String(data.description || '').trim();
+      if (data.date != null && isIsoDate(String(data.date))) payload.date = String(data.date);
+      if (data.heure != null) payload.heure = String(data.heure || '').slice(0, 5);
+      if (data.calories != null) payload.calories = intOrNull(String(data.calories));
+      if (data.proteines != null) payload.proteines = numberOrNull(String(data.proteines));
+      if (data.graisses != null) payload.graisses = numberOrNull(String(data.graisses));
+      if (data.glucides != null) payload.glucides = numberOrNull(String(data.glucides));
+      if (data.score != null) payload.score = intOrNull(String(data.score));
+      if (data.ingredients != null) payload.ingredients = String(data.ingredients || '');
+      if (data.notes != null) payload.notes = String(data.notes || '');
+      return payload;
+    }
+
+    /* ---------- Bind drill events + tab reset ---------- */
+    function bindAppEvents() {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-tab]'), function(btn) {
+        btn.onclick = function() {
+          resetDrill();
+          currentTab = btn.getAttribute('data-tab');
+          renderApp();
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-tab-jump]'), function(btn) {
+        btn.onclick = function(e) {
+          e.preventDefault();
+          resetDrill();
+          currentTab = btn.getAttribute('data-tab-jump');
+          renderApp();
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-meal-drill]'), function(row) {
+        row.onclick = function(e) {
+          if (e.target.closest('button, .tiny-btn, .score-chip, [data-meal-edit], [data-meal-delete]')) return;
+          drill('meal_detail', row.getAttribute('data-meal-drill'));
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-sleep-drill]'), function(row) {
+        row.onclick = function(e) {
+          if (e.target.closest('button, .tiny-btn, .score-chip, [data-sleep-edit], [data-sleep-delete]')) return;
+          drill('sleep_detail', row.getAttribute('data-sleep-drill'));
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-activity-drill]'), function(row) {
+        row.onclick = function(e) {
+          if (e.target.closest('button, .tiny-btn, [data-activity-edit], [data-activity-delete]')) return;
+          drill('activity_detail', row.getAttribute('data-activity-drill'));
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-day-drill]'), function(row) {
+        row.onclick = function(e) {
+          e.preventDefault();
+          drill('day_detail', row.getAttribute('data-day-drill'));
+        };
+      });
+      var backBtn = document.getElementById('drillBack');
+      if (backBtn) backBtn.onclick = backView;
+      var installBtn = document.getElementById('installBtn');
+      if (installBtn) installBtn.onclick = installApp;
+      bindTabEvents();
+    }
+
+    /* ---------- CSS additions ---------- */
+    (function injectDrillStyles() {
+      var css = ''
+        + '.clickable-row{cursor:pointer;transition:transform 0.15s, box-shadow 0.15s;}'
+        + '.clickable-row:hover{transform:translateX(2px);box-shadow:0 6px 18px rgba(26,32,30,0.06);border-color:rgba(61,107,94,0.22);}'
+        + '.chev{color:var(--mist);font-size:18px;margin-left:4px;}'
+        + '.detail-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;}'
+        + '.back-btn{padding:10px 16px;border-radius:12px;background:#fff;border:1px solid var(--border);color:var(--ink2);font-weight:600;font-size:13px;cursor:pointer;transition:all 0.15s;}'
+        + '.back-btn:hover{background:var(--paper);color:var(--sage);border-color:rgba(61,107,94,0.25);}'
+        + '.ing-list{display:flex;flex-direction:column;}'
+        + '.ing-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--border);}'
+        + '.ing-row:last-child{border-bottom:0;}'
+        + '.ing-name{font-size:14px;color:var(--ink);}';
+      var style = document.createElement('style');
+      style.textContent = css;
+      document.head.appendChild(style);
+    })();
+
+    /* ---------- Nutrition override: jours cliquables ---------- */
+    function renderNutrition() {
+      var days = getLastDays(7);
+      var blocks = days.map(function(day) {
+        var dayMeals = mealsForDay(day);
+        if (!dayMeals.length) return '';
+        var dayScore = avg(dayMeals.map(function(x) { return Number(x.score) || 0; }).filter(Boolean));
+        return '<div class="day-card clickable-row" data-day-drill="' + escAttr(day) + '" style="cursor:pointer;">'
+          + '<div class="day-head"><div><strong>' + esc(formatDayOnly(day)) + '</strong><span>' + esc(day) + '</span></div>'
+          + '<div class="muted">' + sum(dayMeals, 'calories') + ' kcal · ' + round1(sum(dayMeals, 'proteines')) + ' g prot · ' + (dayScore ? Math.round(dayScore) + '/100' : '—') + ' <span class="chev">›</span></div></div>'
+          + '<div class="meal-list">' + dayMeals.map(function(meal) { return renderMeal(meal, true); }).join('') + '</div>'
+          + '</div>';
+      }).filter(Boolean).join('');
+      return sectionHead('Nutrition', 'Ajoute, corrige ou supprime tes repas. Clique sur un repas ou un jour pour voir les détails.')
+        + renderMealForm()
+        + (blocks || emptyState('Aucun repas enregistré', 'Utilise le mode manuel ou le Coach IA pour démarrer ton historique nutrition.'));
+    }
   </script>
 </body>
 </html>
