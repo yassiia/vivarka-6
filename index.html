@@ -3521,7 +3521,9 @@
       document.head.appendChild(style);
     })();
 
-    /* ---------- Nutrition override: jours cliquables ---------- */
+    /* ---------- Nutrition override : formulaire masqué par défaut ---------- */
+    var showMealForm = false;
+
     function renderNutrition() {
       var days = getLastDays(7);
       var blocks = days.map(function(day) {
@@ -3534,9 +3536,132 @@
           + '<div class="meal-list">' + dayMeals.map(function(meal) { return renderMeal(meal, true); }).join('') + '</div>'
           + '</div>';
       }).filter(Boolean).join('');
-      return sectionHead('Nutrition', 'Ajoute, corrige ou supprime tes repas. Clique sur un repas ou un jour pour voir les détails.')
-        + renderMealForm()
-        + (blocks || emptyState('Aucun repas enregistré', 'Utilise le mode manuel ou le Coach IA pour démarrer ton historique nutrition.'));
+      var formSection = (showMealForm || editingMealId)
+        ? renderMealForm()
+        : '<button id="addMealBtn" class="primary-btn" style="width:auto;margin-bottom:20px;">+ Ajouter un repas</button>';
+      return sectionHead('Nutrition', 'Clique sur un repas ou un jour pour voir les détails.')
+        + formSection
+        + (blocks || emptyState('Aucun repas enregistré', 'Utilise le bouton ci-dessus ou le Coach IA pour démarrer ton historique nutrition.'));
+    }
+
+    /* Override bindMealFormEvents pour gérer le bouton + fermeture */
+    function bindMealFormEvents() {
+      var addBtn = document.getElementById('addMealBtn');
+      if (addBtn) addBtn.onclick = function() { showMealForm = true; renderApp(); };
+      var save = document.getElementById('mealSaveBtn');
+      var cancel = document.getElementById('mealCancelBtn');
+      if (save) save.onclick = saveMealManual;
+      if (cancel) cancel.onclick = function() { showMealForm = false; resetMealDraft(); };
+      Array.prototype.forEach.call(document.querySelectorAll('[data-meal-edit]'), function(btn) {
+        btn.onclick = function() { startEditMeal(btn.getAttribute('data-meal-edit')); };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-meal-delete]'), function(btn) {
+        btn.onclick = function() { deleteMeal(btn.getAttribute('data-meal-delete')); };
+      });
+    }
+
+    /* Override saveMealManual pour fermer le formulaire après sauvegarde */
+    async function saveMealManual() {
+      var payload = {
+        auth_user_id: session.user.id,
+        description: valueOf('mealDescription'),
+        heure: valueOf('mealHeure'),
+        date: valueOf('mealDate') || todayISO(),
+        calories: numberOrNull(valueOf('mealCalories')),
+        proteines: numberOrNull(valueOf('mealProteines')),
+        graisses: numberOrNull(valueOf('mealGraisses')),
+        glucides: numberOrNull(valueOf('mealGlucides')),
+        score: intOrNull(valueOf('mealScore')),
+        ingredients: valueOf('mealIngredients') || '',
+        notes: valueOf('mealNotes')
+      };
+      if (!payload.description) return alert('Ajoute au moins une description de repas.');
+      try {
+        if (editingMealId) {
+          await db('meals?id=eq.' + editingMealId + '&auth_user_id=eq.' + encodeURIComponent(session.user.id), 'PATCH', payload);
+        } else {
+          await db('meals', 'POST', payload);
+        }
+        await loadAllData();
+        showMealForm = false;
+        resetMealDraft(false);
+        renderApp();
+      } catch (e) {
+        alert(cleanError(e));
+      }
+    }
+
+    /* Override startEditMeal pour ouvrir le formulaire automatiquement */
+    function startEditMeal(id) {
+      var item = (meals || []).find(function(m) { return String(m.id) === String(id); });
+      if (!item) return;
+      editingMealId = id;
+      showMealForm = true;
+      mealDraft = {
+        description: item.description || '',
+        heure: item.heure || '',
+        date: item.date || todayISO(),
+        calories: item.calories == null ? '' : item.calories,
+        proteines: item.proteines == null ? '' : item.proteines,
+        graisses: item.graisses == null ? '' : item.graisses,
+        glucides: item.glucides == null ? '' : item.glucides,
+        score: item.score == null ? '' : item.score,
+        ingredients: item.ingredients || '',
+        notes: item.notes || ''
+      };
+      resetDrill();
+      currentTab = 'nutrition';
+      renderApp();
+    }
+
+    /* Reset showMealForm quand on change d'onglet */
+    function bindAppEvents() {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-tab]'), function(btn) {
+        btn.onclick = function() {
+          showMealForm = false;
+          resetDrill();
+          currentTab = btn.getAttribute('data-tab');
+          renderApp();
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-tab-jump]'), function(btn) {
+        btn.onclick = function(e) {
+          e.preventDefault();
+          showMealForm = false;
+          resetDrill();
+          currentTab = btn.getAttribute('data-tab-jump');
+          renderApp();
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-meal-drill]'), function(row) {
+        row.onclick = function(e) {
+          if (e.target.closest('button, .tiny-btn, .score-chip, [data-meal-edit], [data-meal-delete]')) return;
+          drill('meal_detail', row.getAttribute('data-meal-drill'));
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-sleep-drill]'), function(row) {
+        row.onclick = function(e) {
+          if (e.target.closest('button, .tiny-btn, .score-chip, [data-sleep-edit], [data-sleep-delete]')) return;
+          drill('sleep_detail', row.getAttribute('data-sleep-drill'));
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-activity-drill]'), function(row) {
+        row.onclick = function(e) {
+          if (e.target.closest('button, .tiny-btn, [data-activity-edit], [data-activity-delete]')) return;
+          drill('activity_detail', row.getAttribute('data-activity-drill'));
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-day-drill]'), function(row) {
+        row.onclick = function(e) {
+          e.preventDefault();
+          drill('day_detail', row.getAttribute('data-day-drill'));
+        };
+      });
+      var backBtn = document.getElementById('drillBack');
+      if (backBtn) backBtn.onclick = backView;
+      var installBtn = document.getElementById('installBtn');
+      if (installBtn) installBtn.onclick = installApp;
+      bindTabEvents();
     }
   </script>
 </body>
